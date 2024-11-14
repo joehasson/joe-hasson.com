@@ -56,5 +56,5 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           REPO: ${{ github.repository }}
-          EC2_IP: $${ steps.get-ip.outputs.EC2_IP }}
+          EC2_IP: ${{ steps.get-ip.outputs.EC2_IP }}
         run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
