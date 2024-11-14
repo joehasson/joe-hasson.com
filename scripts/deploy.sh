@@ -12,6 +12,6 @@ ssh -o StrictHostKeyChecking=no -i private_key.pem "ec2-user@$EC2_IP" "\
   sudo rm -rf /var/www/fastapi &&\
   sudo git clone https://github.com/${REPO}.git /var/www/fastapi &&\
   cd /var/www/fastapi &&\
-  source venv/bin/activate &&\
+  pip install fastapi uvicorn gunicorn &&\
   sudo systemctl restart fastapi
 "
