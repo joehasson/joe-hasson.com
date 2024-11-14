@@ -42,14 +42,17 @@ jobs:
         
       # Store IP for use in next job
       - name: Get EC2 IP
+        if: get-ip
         working-directory: ./terraform
         run: |
-          echo "EC2_IP=$(terraform output -raw public_ip)" >> $GITHUB_ENV
+          echo "ip=$(terraform output -raw public_ip)" >> "$GITHUB_OUTPUT"
 
   deploy:
     needs: infrastructure
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    outputs:
+      instance_ip: $${{ steps.get-ip.outputs.ip }}
     
     steps:
       - uses: actions/checkout@v2
@@ -71,4 +74,5 @@ jobs:
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
           REPO: ${{ github.repository }}
+          EC2_IP: $${ needs.infrastructure.outputs.instance_ip }}
         run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
