@@ -33,8 +33,7 @@ After=network.target
 [Service]
 User=ec2-user
 Group=ec2-user
-WorkingDirectory=/var/www/fastapi
-Environment="PATH=/var/www/fastapi/venv/bin"
+WorkingDirectory=/var/www/fastapi/src
 ExecStart=/var/www/fastapi/venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
 
 [Install]
