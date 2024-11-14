@@ -26,11 +26,16 @@ provider "cloudflare" {
     api_token = var.cloudflare_api_token
 }
 
+resource "cloudflare_zones" "domain" {
+  zone = "joe-hasson.com"
+}
+
 # Create DNS record
-resource "cloudflare_record" "api" {
-  zone_id = var.cloudflare_zone_id  # Get this from Cloudflare dashboard
+resource "cloudflare_dns_record" "root" {
+  ttl = 1
+  zone_id = var.cloudflare_zone_id
   name    = "@"  # Represents root domain
-  value   = aws_eip.app_ip.public_ip
+  content   = aws_eip.app_ip.public_ip
   type    = "A"
   proxied = true  # This enables Cloudflare's SSL and CDN
 }
