@@ -26,10 +26,6 @@ provider "cloudflare" {
     api_token = var.cloudflare_api_token
 }
 
-resource "cloudflare_zones" "domain" {
-  zone = "joe-hasson.com"
-}
-
 # Create DNS record
 resource "cloudflare_dns_record" "root" {
   ttl = 1
