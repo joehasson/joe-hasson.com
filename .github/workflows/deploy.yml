@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 jobs:
-  infrastructure:
+  deploy:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
@@ -40,30 +40,13 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"
         
-      # Store IP for use in next job
+      # Store IP for use in later step
       - name: Get EC2 IP
         id: get-ip
         working-directory: ./terraform
         run: |
-          echo "ip=$(terraform output -raw public_ip)" >> "$GITHUB_OUTPUT"
+          echo "EC2_IP=$(terraform output -raw public_ip)" >> $GITHUB_OUTPUT
 
-  deploy:
-    needs: infrastructure
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    outputs:
-      instance_ip: $${{ steps.get-ip.outputs.ip }}
-    
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-      
       - name: Wait for instance to be ready
         run: |
           sleep 60  # Give the instance time to complete user_data script
@@ -74,5 +57,5 @@ jobs:
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
           REPO: ${{ github.repository }}
-          EC2_IP: $${ needs.infrastructure.outputs.instance_ip }}
+          EC2_IP: $${ steps.get-ip.outputs.EC2_IP }}
         run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
