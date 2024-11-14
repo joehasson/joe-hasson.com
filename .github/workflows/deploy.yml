@@ -45,6 +45,13 @@ jobs:
         id: get-ip
         working-directory: ./terraform
         run: |
+          # Debug logging
+          echo "Raw terraform output:"
+          terraform output
+
+          echo "JSON terraform output:"
+          terraform output -json
+
           echo "EC2_IP=$(terraform output -json | jq -r .public_ip.value)" >> $GITHUB_OUTPUT
 
       - name: Wait for instance to be ready
