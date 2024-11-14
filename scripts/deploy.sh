@@ -10,7 +10,7 @@ chmod 600 private_key.pem
 echo "ec2-user@$EC2_IP"
 ssh -o StrictHostKeyChecking=no -i private_key.pem "ec2-user@$EC2_IP" '\
   sudo rm -rf /var/www/fastapi &&\
-  git clone https://github.com/${REPO}.git /var/www/fastapi &&\
+  sudo git clone https://github.com/${REPO}.git /var/www/fastapi &&\
   cd /var/www/fastapi &&\
   source venv/bin/activate &&\
   sudo systemctl restart fastapi
