@@ -42,7 +42,7 @@ jobs:
         
       # Store IP for use in next job
       - name: Get EC2 IP
-        if: get-ip
+        id: get-ip
         working-directory: ./terraform
         run: |
           echo "ip=$(terraform output -raw public_ip)" >> "$GITHUB_OUTPUT"
