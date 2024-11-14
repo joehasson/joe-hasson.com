@@ -33,7 +33,12 @@ jobs:
         
       - name: Terraform Plan
         working-directory: ./terraform
-        run: terraform plan -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"
+        run: |
+          terraform plan -var="
+          ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}
+          cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}
+          "
 
       - name: Terraform Apply
         working-directory: ./terraform

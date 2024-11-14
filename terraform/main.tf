@@ -129,3 +129,14 @@ resource "aws_eip" "app_ip" {
     Name = "${var.project_name}-eip"
   }
 }
+
+# SSL Certificate
+resource "aws_acm_certificate" "cert" {
+  domain_name               = "joe-hasson.com"
+  validation_method         = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+

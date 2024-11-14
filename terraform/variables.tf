@@ -14,3 +14,14 @@ variable "ssh_public_key" {
     description = "Public key to use for SSH access"
     type        = string
 }
+
+variable "cloudflare_api_token" {
+  description = "Cloudflare API Token"
+  sensitive   = true
+}
+
+variable "cloudflare_zone_id" {
+    description = "Cloudflare Zone ID"
+    sensitive = true
+}
+
