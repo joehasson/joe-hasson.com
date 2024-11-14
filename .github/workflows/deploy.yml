@@ -55,8 +55,6 @@ jobs:
       - name: Deploy to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets.EC2_HOST }}
-          USER: ${{ secrets.EC2_USER }}
           REPO: ${{ github.repository }}
           EC2_IP: $${ steps.get-ip.outputs.EC2_IP }}
         run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
