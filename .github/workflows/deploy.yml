@@ -56,5 +56,5 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           REPO: ${{ github.repository }}
-          EC2_IP: ${{ terraform output -raw public_ip }}
+          EC2_IP: $(terraform output -raw public_ip)
         run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
