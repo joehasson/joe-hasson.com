@@ -52,7 +52,10 @@ jobs:
           echo "JSON terraform output:"
           terraform output -json
 
-          echo "EC2_IP=$(terraform output -json | jq -r .public_ip.value)" >> $GITHUB_OUTPUT
+          # save in a file in case other stuff is getting mixed in when it shouldn't
+          terraform output -json > tf_output.json
+
+          echo "EC2_IP=$(jq -r '.public_ip.value' tf_output.json)" >> $GITHUB_OUTPUT
 
       - name: Wait for instance to be ready
         run: |
