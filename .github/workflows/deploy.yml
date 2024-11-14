@@ -45,8 +45,7 @@ jobs:
         id: get-ip
         working-directory: ./terraform
         run: |
-          IP=$(terraform output -raw public_ip  | tr -d '\n')
-          echo "EC2_IP=$IP" >> $GITHUB_OUTPUT
+          echo "EC2_IP=$(terraform output -json | jq -r .public_ip.value)" >> $GITHUB_OUTPUT
 
       - name: Wait for instance to be ready
         run: |
@@ -56,5 +55,5 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           REPO: ${{ github.repository }}
-          EC2_IP: $(terraform output -raw public_ip)
+          EC2_IP: ${{ steps.get-ip.outputs.EC2_IP }}
         run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
