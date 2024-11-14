@@ -16,14 +16,6 @@ sudo systemctl enable nginx
 sudo mkdir -p /var/www/fastapi
 sudo chown ec2-user:ec2-user /var/www/fastapi
 
-# Install Python virtual environment
-python3 -m pip install --user virtualenv
-python3 -m venv /var/www/fastapi/venv
-
-# Activate virtual environment and install packages
-source /var/www/fastapi/venv/bin/activate
-pip install fastapi uvicorn gunicorn
-
 # Create a systemd service file for your FastAPI app
 sudo tee /etc/systemd/system/fastapi.service << EOF
 [Unit]
@@ -34,7 +26,7 @@ After=network.target
 User=ec2-user
 Group=ec2-user
 WorkingDirectory=/var/www/fastapi/src
-ExecStart=/var/www/fastapi/venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
+ExecStart=gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
 
 [Install]
 WantedBy=multi-user.target
