@@ -26,7 +26,7 @@ After=network.target
 User=ec2-user
 Group=ec2-user
 WorkingDirectory=/var/www/fastapi/src
-ExecStart=gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
+ExecStart=/home/ec2-user/.local/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
 
 [Install]
 WantedBy=multi-user.target
