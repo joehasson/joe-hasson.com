@@ -33,19 +33,19 @@ jobs:
         
       - name: Terraform Plan
         working-directory: ./terraform
-        run: |
-          terraform plan\
-          -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"\
-          -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"\
+        run: >
+          terraform plan
+          -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"
+          -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"
           -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
 
       - name: Terraform Apply
         working-directory: ./terraform
         if: github.ref == 'refs/heads/main'
-        run: |
-          terraform apply -auto-approve\
-          -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"\
-          -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"\
+        run: >
+          terraform apply -auto-approve
+          -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"
+          -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"
           -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
         
       # Store IP for use in later step
