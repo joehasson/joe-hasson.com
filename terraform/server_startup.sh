@@ -3,7 +3,7 @@
 sudo yum update -y
 
 # Install Python and development tools
-sudo yum install -y python3-pip python3-devel gcc
+sudo yum install -y python3-pip python3-devel gcc git
 
 # Install nginx
 sudo amazon-linux-extras install nginx1 -y

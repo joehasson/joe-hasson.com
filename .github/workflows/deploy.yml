@@ -45,24 +45,6 @@ jobs:
         id: get-ip
         working-directory: ./terraform
         run: |
-          # Debug logging
-          echo "Raw terraform output:"
-          terraform output
-
-          echo "JSON terraform output:"
-          terraform output -json
-
-          echo "=== Terraform output as hex ==="
-          terraform output -json | xxd
-
-          # Check where the debug line is going
-          terraform output -json 1>stdout.txt 2>stderr.txt
-          echo "=== STDOUT ==="
-          cat stdout.txt
-          echo "=== STDERR ==="
-          cat stderr.txt
-
-
           echo "EC2_IP=$(terraform output -json | jq -r '.public_ip.value')" >> $GITHUB_OUTPUT
 
       - name: Wait for instance to be ready
