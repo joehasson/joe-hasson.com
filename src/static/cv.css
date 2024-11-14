@@ -1,0 +1,30 @@
+.experience-grid {
+    max-width: 800px;
+    margin: 2rem 0;
+}
+
+.experience-item {
+    position: relative;
+    padding-bottom: 2rem;
+    border-left: 2px solid #64ffda;
+    padding-left: 2rem;
+    margin-left: 1rem;
+}
+
+.experience-item:last-child {
+    padding-bottom: 0;
+}
+
+.experience-header {
+    margin-bottom: 1rem;
+}
+
+.cv-link {
+    all: unset;
+    cursor: pointer;
+}
+
+
+.cv-link:hover {
+    color: #64ffda;
+}

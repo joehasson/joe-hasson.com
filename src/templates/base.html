@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/base.css">
+    <link rel="stylesheet" href="static/navbar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% block page_css %}{% endblock %}
+    <title>Joe Hasson</title>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <a href="/" id="logo-link">Joe Hasson</a>
+        </div>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/portfolio">Portfolio</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/cv">CV</a></li>
+            <li>
+                <div>
+                <a href="https://github.com/joehasson" class="social-link github">
+                    <i class="fab fa-github"></i>
+                </a>
+               <a href="https://linkedin.com/in/joseph-hasson" class="social-link linkedin">
+                    <i class="fab fa-linkedin"></i>
+               </a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Portfolio{% endblock %}
+
+{% block page_css %}
+    <link rel="stylesheet" href="static/portfolio.css">
+{% endblock %}
+
+{% block content %}
+<h1>Portfolio</h1>
+<div class="portfolio-grid">
+    <div class="portfolio-item">
+        <h3>Project One</h3>
+        <p>Description of your first project</p>
+        <a href="#">View Project →</a>
+    </div>
+    <div class="portfolio-item">
+        <h3>Project Two</h3>
+        <p>Description of your second project</p>
+        <a href="#">View Project →</a>
+    </div>
+</div>
+{% endblock %}
