@@ -45,7 +45,7 @@ jobs:
         id: get-ip
         working-directory: ./terraform
         run: |
-          IP=$(terraform output -raw public_ip)
+          IP=$(terraform output -raw public_ip  | tr -d '\n')
           echo "EC2_IP=$IP" >> $GITHUB_OUTPUT
 
       - name: Wait for instance to be ready
