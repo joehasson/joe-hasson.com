@@ -139,4 +139,3 @@ resource "aws_acm_certificate" "cert" {
     create_before_destroy = true
   }
 }
-
