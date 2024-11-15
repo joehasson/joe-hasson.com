@@ -66,7 +66,10 @@ jobs:
             }'
 
       - name: Read deploy script
-        run: echo "DEPLOY_SCRIPT=$(cat scripts/deploy.sh | base64)" >> $GITHUB_ENV
+        id: script
+        uses: andstor/file-reader-action@v1
+        with:
+          path: script/deploy.sh
 
       - name: Run deploy script on EC2
         uses: appleboy/ssh-action@v1.0.0
@@ -74,5 +77,5 @@ jobs:
           username: ec2-user
           host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: echo ${{ env.DEPLOY_SCRIPT }} | base64 -d | bash
+          script: ${{ steps.script.outputs.contents }}
 
