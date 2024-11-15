@@ -69,7 +69,7 @@ jobs:
         id: script
         uses: andstor/file-reader-action@v1
         with:
-          path: script/deploy.sh
+          path: scripts/deploy.sh
 
       - name: Run deploy script on EC2
         uses: appleboy/ssh-action@v1.0.0
