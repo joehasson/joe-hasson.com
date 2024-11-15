@@ -55,6 +55,17 @@ jobs:
         run: |
           echo "EC2_IP=$(terraform output -json | jq -r '.public_ip.value')" >> $GITHUB_OUTPUT
 
+      - name: Purge Cloudflare Cache
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{
+              "files": [
+                "https://joe-hasson.com/*"
+              ]
+            }'
+
       - name: Wait for instance to be ready
         run: |
           sleep 60  # Give the instance time to complete user_data script

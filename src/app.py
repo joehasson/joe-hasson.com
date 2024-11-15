@@ -1,7 +1,7 @@
 import jinja2
 import webassets
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import Response
@@ -47,19 +47,28 @@ cv_html = render("cv.html")
 # Define routes
 @app.get("/")
 async def home():
-    return HTMLResponse(home_html)
+    res = HTMLResponse(home_html)
+    res.headers["Cache-Control"] = "public, max-age=3600"
+    return res
+
 
 @app.get("/blog")
 async def blog():
-    return HTMLResponse(blog_html)
+    res = HTMLResponse(blog_html)
+    res.headers["Cache-Control"] = "public, max-age=3600"
+    return res
 
 @app.get("/portfolio")
 async def portfolio():
-    return HTMLResponse(home_html)
+    res = HTMLResponse(portfolio_html)
+    res.headers["Cache-Control"] = "public, max-age=3600"
+    return res
 
 @app.get("/cv")
 async def cv():
-    return HTMLResponse(cv_html)
+    res = HTMLResponse(cv_html)
+    res.headers["Cache-Control"] = "public, max-age=3600"
+    return res
 
 @app.get("/health_check")
 async def health_check():
