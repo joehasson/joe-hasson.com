@@ -73,9 +73,12 @@ jobs:
 
       - name: Run deploy script on EC2
         uses: appleboy/ssh-action@v1.0.0
+        env:
+          REPO: ${{ github.repository }}
         with:
           username: ec2-user
           host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          envs: REPO
           script: ${{ steps.script.outputs.contents }}
 
