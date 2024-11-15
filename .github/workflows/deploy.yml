@@ -13,7 +13,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -72,5 +72,5 @@ jobs:
           username: ec2-user
           host: ${{ steps.get-ip.outputs.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: ls && ./scripts/deploy.sh
+          script: ./scripts/deploy.sh
 
