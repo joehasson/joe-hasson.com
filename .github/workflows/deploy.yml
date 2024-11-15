@@ -50,10 +50,9 @@ jobs:
         
       # Store IP for use in later step
       - name: Get EC2 IP
-        id: get-ip
         working-directory: ./terraform
         run: |
-          echo "EC2_IP=$(terraform output -json | jq -r '.public_ip.value')" >> $GITHUB_OUTPUT
+          echo "EC2_IP=$(terraform output -json | jq -r '.public_ip.value')" >> $GITHUB_ENV
 
       - name: Purge Cloudflare Cache
         run: |
@@ -67,13 +66,13 @@ jobs:
             }'
 
       - name: Read deploy script
-        run: echo "DEPLOY_SCRIPT=$(cat scripts/deploy.sh)" >> $GITHUB_ENV
+        run: echo "DEPLOY_SCRIPT=$(cat scripts/deploy.sh | base64)" >> $GITHUB_ENV
 
       - name: Run deploy script on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           username: ec2-user
-          host: ${{ steps.get-ip.outputs.EC2_IP }}
+          host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: ${{ env.DEPLOY_SCRIPT }}
+          script: echo ${{ env.DEPLOY_SCRIPT }} | base64 -d | bash
 
