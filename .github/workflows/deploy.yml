@@ -66,14 +66,14 @@ jobs:
               ]
             }'
 
+      - name: Read deploy script
+        run: echo "DEPLOY_SCRIPT=$(cat scripts/deploy.sh)" >> $GITHUB_ENV
+
       - name: Run deploy script on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           username: ec2-user
           host: ${{ steps.get-ip.outputs.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: |
-            pwd
-            ls -la
-            ./scripts/deploy.sh
+          script: ${{ env.DEPLOY_SCRIPT }}
 
