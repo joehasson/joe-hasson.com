@@ -53,7 +53,7 @@ server {
 EOF
 
 # Remove default nginx configuration
-sudo rm /etc/nginx/conf.d/default.conf
+sudo rm -r /etc/nginx/conf.d/default.conf
 
 # Test nginx configuration and then start
 sudo nginx -t
