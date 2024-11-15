@@ -72,5 +72,5 @@ jobs:
           username: ec2-user
           host: ${{ steps.get-ip.outputs.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: ./scripts/deploy.sh
+          script: ls && ./scripts/deploy.sh
 
