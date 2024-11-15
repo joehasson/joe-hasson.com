@@ -114,7 +114,6 @@ resource "aws_instance" "app" {
   vpc_security_group_ids = [aws_security_group.app.id]
   
   key_name = aws_key_pair.deployer.key_name
-  user_data = file("${path.module}/server_startup.sh")
 
   tags = {
     Name = "${var.project_name}-instance"

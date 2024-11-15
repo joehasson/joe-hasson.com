@@ -66,13 +66,11 @@ jobs:
               ]
             }'
 
-      - name: Wait for instance to be ready
-        run: |
-          sleep 60  # Give the instance time to complete user_data script
+      - name: Run deploy script on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_path: scripts/deploy.sh
 
-      - name: Deploy to EC2
-        env:
-          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          REPO: ${{ github.repository }}
-          EC2_IP: ${{ steps.get-ip.outputs.EC2_IP }}
-        run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
