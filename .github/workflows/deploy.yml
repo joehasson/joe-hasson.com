@@ -71,7 +71,7 @@ jobs:
           username: ec2-user
           host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-        script:
+        script: |
           sudo rm /etc/nginx/nginx.conf
 
       - name: Push new nginx.conf to server
