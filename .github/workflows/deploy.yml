@@ -65,13 +65,30 @@ jobs:
               ]
             }'
 
-      - name: Read deploy script
-        id: script
-        uses: andstor/file-reader-action@v1
+      - name: Push nginx config to EC2 server
+        uses: appleboy/scp-action@v0.17
         with:
-          path: scripts/deploy.sh
+          username: ec2-user
+          host: ${{ env.EC2_IP }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "nginx.conf"
+          target: "/etc/nginx/nginx.conf"
 
-      - name: Run deploy script on EC2
+      - name: Render static content
+        run: |
+          pip install webassets jinja2
+          python3 scripts/render.py
+
+      - name: Push static content to EC2 server
+        uses: appleboy/scp-action@v0.17
+        with:
+          username: ec2-user
+          host: ${{ env.EC2_IP }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "static/*"
+          target: "/static"
+
+      - name: Install nginx on server and run
         uses: appleboy/ssh-action@v1.0.0
         env:
           REPO: ${{ github.repository }}
@@ -80,5 +97,14 @@ jobs:
           host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           envs: REPO
-          script: ${{ steps.script.outputs.contents }}
+          script: |
+            set -e
 
+            # install nginx
+            sudo yum update -y
+            sudo amazon-linux-extras install nginx1 -y
+            
+            # Check nginx configuration and then start
+            sudo nginx -t
+            sudo systemctl restart nginx
+            sudo systemctl enable nginx
