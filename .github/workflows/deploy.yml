@@ -65,7 +65,16 @@ jobs:
               ]
             }'
 
-      - name: Push nginx config to EC2 server
+      - name: Remove existing nginx.conf from server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          username: ec2-user
+          host: ${{ env.EC2_IP }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        script:
+          sudo rm /etc/nginx/nginx.conf
+
+      - name: Push new nginx.conf to server
         uses: appleboy/scp-action@v0.1.7
         with:
           username: ec2-user
@@ -74,6 +83,16 @@ jobs:
           source: "nginx.conf"
           target: "/etc/nginx/"
           sudo: true
+
+      - name: Set permissions for nginx.conf on server
+        uses: appleboy/ssh-action@1.0.0
+        with:
+          host: ${{ env.EC2_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            sudo chown root:root /etc/nginx/nginx.conf
+            sudo chmod 644 /etc/nginx/nginx.conf
 
       - name: Render static content
         run: |
