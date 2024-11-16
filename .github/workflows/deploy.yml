@@ -85,7 +85,7 @@ jobs:
           sudo: true
 
       - name: Set permissions for nginx.conf on server
-        uses: appleboy/ssh-action@1.0.0
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ env.EC2_IP }}
           username: ec2-user
