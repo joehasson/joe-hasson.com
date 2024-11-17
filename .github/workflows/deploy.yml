@@ -115,7 +115,7 @@ jobs:
           host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: "static/*"
-          target: "/tmp/static"
+          target: "/tmp"
 
       - name: Move temp SCPed files to correct location and set permissions
         uses: appleboy/ssh-action@v1.0.0
