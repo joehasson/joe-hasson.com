@@ -12,10 +12,6 @@ body {
     color: #333;
 }
 
-.icon {
-    fill: white;
-}
-
 /* Layout */
 .container {
     max-width: 1000px;

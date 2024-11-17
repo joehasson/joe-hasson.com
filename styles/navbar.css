@@ -113,3 +113,11 @@ nav .logo a {
     font-size: 1.8em;
 }
 
+.icon {
+    fill: white;
+}
+
+.icon:hover {
+    fill: #64ffda;
+}
+
