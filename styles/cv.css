@@ -28,3 +28,9 @@
 .cv-link:hover {
     color: #64ffda;
 }
+
+.full-cv-link {
+    display: flex;
+    align-items: center;
+}
+
