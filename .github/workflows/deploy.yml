@@ -94,7 +94,7 @@ jobs:
 
       - name: Render static content
         run: |
-          pip install webassets jinja2
+          pip install webassets jinja2 cssmin
           python3 static_site/render.py
 
       - name: Push static content to server in temp dir
