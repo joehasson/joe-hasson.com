@@ -95,7 +95,7 @@ jobs:
       - name: Render static content
         run: |
           pip install webassets jinja2
-          python3 scripts/render.py
+          python3 static_site/render.py
 
       - name: Push static content to server in temp dir
         uses: appleboy/scp-action@v0.1.7
