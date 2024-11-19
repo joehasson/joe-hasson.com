@@ -72,7 +72,7 @@ jobs:
 
       - name: Archive and compress image ahead of SCP
         id: image_gz
-        run: "IMAGE_GZ=$(docker save personal-site:${{ github.sha }} | gzip)"
+        run: echo "IMAGE_GZ=$(docker save personal-site:${{ github.sha }} | gzip)" >> $GITHUB_OUTPUT
 
   prepare-server:
     needs: infrastructure
