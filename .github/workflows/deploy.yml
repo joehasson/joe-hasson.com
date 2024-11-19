@@ -94,8 +94,6 @@ jobs:
             sudo systemctl start docker
             sudo systemctl enable docker
             sudo usermod -aG docker $USER
-            # Load image
-            docker load -i /tmp/image.tar.gz
             # Stop and remove all existing containers - there might be
             # an image running already
             docker stop $(docker ps -q) && docker rm $(docker ps -aq)
@@ -124,7 +122,9 @@ jobs:
           username: ec2-user
           host: ${{ needs.infrastructure.outputs.ec2_ip }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: docker run --network host personal-site:${{ github.sha }}
+          script: |
+            docker load -i /tmp/image.tar.gz
+            docker run --network host personal-site:${{ github.sha }}
             
       - name: Purge Cloudflare Cache
         run: |
