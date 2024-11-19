@@ -72,7 +72,7 @@ jobs:
 
       - name: Archive and compress image ahead of SCP
         id: image_gz
-        run: echo "IMAGE_GZ=$(docker save personal-site:${{ github.sha }} | gzip)" >> $GITHUB_OUTPUT
+        run: echo "IMAGE_GZ=$(docker save personal-site:${{ github.sha }} | gzip | base64)" >> $GITHUB_OUTPUT
 
   prepare-server:
     needs: infrastructure
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Write image to disk ahead of scp
-        run: echo ${{ needs.build.outputs.image_gz }} > image.tar.gz
+        run: echo ${{ needs.build.outputs.image_gz }} | base64 -d > image.tar.gz
 
       - name: SCP docker image to server
         uses: appleboy/scp-action@master
