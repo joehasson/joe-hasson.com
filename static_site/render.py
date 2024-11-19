@@ -5,7 +5,7 @@ from pathlib import Path
 import jinja2
 import webassets
 
-# Work in project root
+# Work in static_site root
 os.chdir(Path(__file__).parent.parent)
 
 # Perform CSS Bundling
@@ -18,7 +18,6 @@ css = webassets.Bundle(
     'cv.css',
     'navbar.css',
     'portfolio.css',
-    #'fontawesome/all.min.css',
     filters='cssmin',
     output=bundle_output
 )
@@ -28,11 +27,11 @@ css.build()
 with open(f'styles/{bundle_output}') as f:
     BUNDLED_CSS = f.read()
 
-# SSR with jinja2 and leave static files in static directory
+# SSR with jinja2 and leave generated static content in build directory
 env = jinja2.Environment(loader=jinja2.FileSystemLoader("templates"))
 render = lambda fname: env.get_template(fname).render(css=BUNDLED_CSS)
 
-os.makedirs('static', exist_ok=True)
+os.makedirs('build', exist_ok=True)
 for fname in ["index.html", "blog.html", "portfolio.html", "cv.html"]:
-    with open(f'static/{fname}', 'w') as f:
+    with open(f'build/{fname}', 'w') as f:
         f.write(render(fname))
