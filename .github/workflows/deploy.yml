@@ -133,7 +133,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             docker load -i /tmp/image.tar.gz
-            docker run --network host personal-site:${{ github.sha }}
+            docker run -d --network host personal-site:${{ github.sha }}
             
       - name: Purge Cloudflare Cache
         run: |
