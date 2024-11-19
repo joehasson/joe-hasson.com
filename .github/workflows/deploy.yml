@@ -96,7 +96,9 @@ jobs:
             sudo usermod -aG docker $USER
             # Stop and remove all existing containers - there might be
             # an image running already
-            docker stop $(docker ps -q) && docker rm $(docker ps -aq)
+            if [ -n "$(docker ps -q)" ]; then
+              docker stop $(docker ps -q) && docker rm $(docker ps -aq)
+            fi
 
   start-app:
     needs: [infrastructure, prepare-server, build]
