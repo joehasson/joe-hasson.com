@@ -1,0 +1,22 @@
+[package]
+name = "dynamic_site"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+path = "src/bin/static_build.rs"
+name = "static-build"
+
+[[bin]]
+path = "src/bin/dynamic.rs"
+name = "dynamic-site"
+
+[lib]
+path = "src/lib.rs"
+name = "shared"
+
+[dependencies]
+actix-web = "4"
+tera = "1.20"
+anyhow = { version = "1.0", features = ["backtrace"] }
+lightningcss_rs = "0.1.0"
