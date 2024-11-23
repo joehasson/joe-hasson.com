@@ -1,15 +1,29 @@
 # Build rust executable
-FROM rust:1.78 as builder
+FROM rust:1.78 as chef
+RUN cargo install cargo-chef
 WORKDIR /usr/src/app
+
+FROM chef as planner
+COPY src/ src/
+COPY Cargo.lock Cargo.toml .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef as builder
+COPY --from=planner /usr/src/app/recipe.json recipe.json
+# build dependencies
+RUN cargo chef cook --release --recipe-path recipe.json
+# build application
 COPY templates/ templates/
 COPY styles/ styles/
 COPY src/ src/
 COPY Cargo.lock Cargo.toml .
-RUN cargo build --release
-RUN /usr/src/app/target/release/static-build
+## build static
+RUN cargo run --bin static-build --release
+## build dynamic
+RUN cargo build --bin dynamic-site --release
 
 # Set up server
-FROM nginx
+FROM nginx as runtime
 
 ## prepare static content and rust binary
 COPY templates/ templates/
