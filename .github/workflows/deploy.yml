@@ -67,7 +67,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          tags: personal-site:${{ github.sha }} .
+          tags: personal-site:${{ github.sha }}
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
