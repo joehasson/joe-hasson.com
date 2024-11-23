@@ -13,14 +13,14 @@ COPY --from=planner /usr/src/app/recipe.json recipe.json
 # build dependencies
 RUN cargo chef cook --release --recipe-path recipe.json
 # build application
+## build dynamic
+RUN cargo build --bin dynamic-site --release
 COPY templates/ templates/
 COPY styles/ styles/
 COPY src/ src/
 COPY Cargo.lock Cargo.toml .
 ## build static
 RUN cargo run --bin static-build --release
-## build dynamic
-RUN cargo build --bin dynamic-site --release
 
 # Set up server
 FROM nginx as runtime
