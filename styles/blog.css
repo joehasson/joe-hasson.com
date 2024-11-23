@@ -18,3 +18,64 @@
     margin-bottom: 20px;
 }
 
+/* Blog posts */
+.blog-post {
+    margin-bottom: 40px;
+}
+
+.blog-post h2 {
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.blog-post .date {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+/* Signup form */
+.signup-container {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+}
+
+.signup-form h3 {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.signup-form p {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+    max-width: 400px;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.input-group button {
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.input-group button:hover {
+    background: #1557b0;
+}
