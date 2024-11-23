@@ -10,7 +10,7 @@ pub struct SsrCommon {
 impl SsrCommon {
     pub fn load() -> Result<Self, anyhow::Error> {
         let tera = Tera::new("templates/*")?;
-        let raw_css = std::fs::read_to_string("build/bundle.css")?;
+        let raw_css = std::fs::read_to_string("build/css/bundle.css")?;
         let mut base_context = Context::new();
         base_context.insert("css", &raw_css);
         Ok(Self { tera, base_context})

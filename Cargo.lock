@@ -703,6 +703,7 @@ dependencies = [
  "anyhow",
  "env_logger",
  "lightningcss_rs",
+ "log",
  "tera",
 ]
 

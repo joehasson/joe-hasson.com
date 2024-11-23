@@ -1,6 +1,7 @@
 use tera::{Tera, Context};
 use anyhow::Result;
 use lightningcss::stylesheet::{StyleSheet, ParserOptions};
+use shared::ssr::SsrCommon;
 
 fn main() -> Result<()> {
     // Work in the project root
@@ -12,7 +13,8 @@ fn main() -> Result<()> {
     std::env::set_current_dir(project_root)?;
 
     // Create build dir if it doesnt exist already
-    std::fs::create_dir_all("build")?;
+    std::fs::create_dir_all("build/html")?;
+    std::fs::create_dir_all("build/css")?;
 
     // perform CSS bundling
     let mut bundled_css = String::new();
@@ -27,17 +29,13 @@ fn main() -> Result<()> {
             bundled_css.push_str(&code);
         }
     }
-    std::fs::write("build/bundle.css", &bundled_css)?;
+    std::fs::write("build/css/bundle.css", &bundled_css)?;
 
-    // Set up tera for template rendering
-    let tera = Tera::new("templates/*")?;
-    let mut context = Context::new();
-    context.insert("css", &bundled_css);
-
-    // Render templates
-    for fname in tera.get_template_names() {
-        let rendered = tera.render(fname, &context)?;
-        std::fs::write(format!("build/{}", fname), rendered)?;
+    // Render templates for static pages
+    let ssr = SsrCommon::load()?;
+    for fname in ["cv.html", "index.html", "portfolio.html"] {
+        let rendered = ssr.render(fname)?;
+        std::fs::write(format!("build/html/{}", fname), rendered)?;
     }
 
     Ok(())

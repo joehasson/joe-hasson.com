@@ -1,7 +1,10 @@
 # Build rust executable
 FROM rust:1.78 as builder
 WORKDIR /usr/src/app
-COPY . .
+COPY templates/ templates/
+COPY styles/ styles/
+COPY src/ src/
+COPY Cargo.lock Cargo.toml .
 RUN cargo build --release
 RUN /usr/src/app/target/release/static-build
 
@@ -9,7 +12,9 @@ RUN /usr/src/app/target/release/static-build
 FROM nginx
 
 ## prepare static content and rust binary
-COPY --from=builder  /usr/src/app/build /static
+COPY templates/ templates/
+COPY styles/ styles/
+COPY --from=builder  /usr/src/app/build /build
 COPY --from=builder /usr/src/app/target/release/dynamic-site /usr/local/bin/
 
 # prepare config and static content for nginx
