@@ -4,7 +4,7 @@ use crate::{
     util::e500
 };
 
-pub async fn blog(ssr: web::Data<SsrCommon>) -> Result<HttpResponse, actix_web::Error> {
+pub async fn get(ssr: web::Data<SsrCommon>) -> Result<HttpResponse, actix_web::Error> {
     let html = ssr.as_ref().clone()
         .render("blog.html")
         .map_err(e500)?;
