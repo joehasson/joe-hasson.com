@@ -25,6 +25,7 @@ async fn main() -> std::io::Result<()> {
         .host(&read_env("DB_HOST"))
         .username(&read_env("DB_USER"))
         .password(&read_env("DB_PASSWORD"))
+        .database(&read_env("DB_NAME"))
         .port(read_env("DB_PORT").parse::<u16>().expect("DB_PORT was not a u16"))
         .ssl_mode(if read_env("APP_ENV") == "local" { PgSslMode::Prefer } else { PgSslMode::Require});
 
