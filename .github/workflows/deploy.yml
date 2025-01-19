@@ -186,11 +186,28 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         env:
           REPO: ${{ github.repository }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_PORT: ${{ vars.DB_PORT }}
+          DB_USER: ${{ vars.DB_USER }}
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DATABASE_URL: postgres://${{ vars.DB_USER }}:${{ vars.DB_PASSWORD}}@${{ vars.DB_HOST }}:${{ vars.DB_PORT}}/${{ vars.DB_NAME}}
+          APP_ENV: production
         with:
           username: ec2-user
           host: ${{ needs.infrastructure.outputs.ec2_ip }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
+            # Export environment variables
+            export DB_NAME=${DB_NAME}
+            export DB_PORT=${DB_PORT}
+            export DB_USER=${DB_USER}
+            export DB_HOST=${DB_HOST}
+            export DB_PASSWORD=${DB_PASSWORD}
+            export DATABASE_URL=${DATABASE_URL}
+            export APP_ENV=${APP_ENV}
+
+            # load images and run containers
             docker load -i /tmp/app-image.tar.gz
             docker load -i /tmp/migrations-image.tar.gz
             docker compose up
