@@ -63,28 +63,48 @@ jobs:
       - name: Set up docker buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build docker image
+      - name: Build app docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          tags: personal-site:${{ github.sha }}
+          tags: joe-hasson-personal-site
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Archive and compress image ahead of SCP
-        run: docker save personal-site:${{ github.sha }} | gzip > image.tar.gz
+      - name: Build app docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.migrations
+          tags: joe-hasson-personal-site-migrations
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Upload image artifact
+      - name: Archive and compress images ahead of SCP
+        run: >
+          docker save joe-hasson-personal-site | gzip > app-image.tar.gz
+          && docker save joe-hasson-personal-site-migrations | gzip > migrations-image.tar.gz
+
+      - name: Upload app image artifact
         uses: actions/upload-artifact@v3
         with:
           name: docker-image
-          path: image.tar.gz
+          path: app-image.tar.gz
+
+      - name: Upload migrations image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: migrations-image.tar.gz
 
   prepare-server:
     needs: infrastructure
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
       - name: Install docker on server
         uses: appleboy/ssh-action@v1.0.0
         env:
@@ -106,6 +126,16 @@ jobs:
             if [ -n "$(docker ps -q)" ]; then
               docker stop $(docker ps -q) && docker rm $(docker ps -aq)
             fi
+      - name: Set environment variables
+
+      - name: SCP compose.yml onto server
+        uses: appleboy/scp-action@master
+        with:
+          username: ec2-user
+          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "compose.yml"
+          target: /
 
   start-app:
     needs: [infrastructure, prepare-server, build]
@@ -117,16 +147,25 @@ jobs:
           name: docker-image
           path: .
 
-      - name: SCP docker image to server
+      - name: SCP app docker image to server
         uses: appleboy/scp-action@master
         with:
           username: ec2-user
           host: ${{ needs.infrastructure.outputs.ec2_ip }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: "image.tar.gz"
+          source: "app-image.tar.gz"
           target: /tmp
 
-      - name: run application container on server
+      - name: SCP migrations docker image to server
+        uses: appleboy/scp-action@master
+        with:
+          username: ec2-user
+          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "migrations-image.tar.gz"
+          target: /tmp
+
+      - name: run application on server using docker compose
         uses: appleboy/ssh-action@v1.0.0
         env:
           REPO: ${{ github.repository }}
@@ -135,8 +174,9 @@ jobs:
           host: ${{ needs.infrastructure.outputs.ec2_ip }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
-            docker load -i /tmp/image.tar.gz
-            docker run -d --network host personal-site:${{ github.sha }}
+            docker load -i /tmp/app-image.tar.gz
+            docker load -i /tmp/migrations-image.tar.gz
+            docker compose up
             
       - name: Purge Cloudflare Cache
         run: |
