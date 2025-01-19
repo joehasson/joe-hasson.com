@@ -200,6 +200,8 @@ jobs:
           envs: REPO, DB_NAME, DB_PORT, DB_USER, DB_HOST, DB_PASSWORD, DATABASE_URL
           script: |
             # Export environment variables
+            echo "checking env vars are passed in gh actions"
+            echo "DB_NAME=${DB_NAME}"
             export DB_NAME=${DB_NAME}
             export DB_PORT=${DB_PORT}
             export DB_USER=${DB_USER}
