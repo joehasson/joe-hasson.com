@@ -126,7 +126,6 @@ jobs:
             if [ -n "$(docker ps -q)" ]; then
               docker stop $(docker ps -q) && docker rm $(docker ps -aq)
             fi
-      - name: Set environment variables
 
       - name: SCP compose.yml onto server
         uses: appleboy/scp-action@master
