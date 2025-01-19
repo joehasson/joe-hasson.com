@@ -134,7 +134,7 @@ jobs:
           host: ${{ needs.infrastructure.outputs.ec2_ip }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: "compose.yml"
-          target: /
+          target: /home/ec2-user
 
   start-app:
     needs: [infrastructure, prepare-server, build]
