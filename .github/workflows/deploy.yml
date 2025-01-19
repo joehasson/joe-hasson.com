@@ -202,6 +202,7 @@ jobs:
             # Export environment variables
             echo "checking env vars are passed in gh actions"
             echo "DB_NAME=${DB_NAME}"
+            echo "After export, DB_NAME is: ${DB_NAME}"
             export DB_NAME=${DB_NAME}
             export DB_PORT=${DB_PORT}
             export DB_USER=${DB_USER}
@@ -213,7 +214,7 @@ jobs:
             # load images and run containers
             docker load -i /tmp/app-image.tar.gz
             docker load -i /tmp/migrations-image.tar.gz
-            docker compose up
+            docker compose up -d --wait
             
       - name: Purge Cloudflare Cache
         run: |
