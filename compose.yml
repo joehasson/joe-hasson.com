@@ -6,10 +6,12 @@ services:
     ports:
       - "8000:80"
     environment:
+      - APP_ENV=local
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
       - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
     depends_on:
       - db
 
