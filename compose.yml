@@ -18,7 +18,7 @@ services:
   migration:
     build:
       context: .
-      dockerfile: Dockerfile.dev-migrations
+      dockerfile: Dockerfile.migrations
     environment:
       - DATABASE_URL=${DATABASE_URL}
     depends_on:
