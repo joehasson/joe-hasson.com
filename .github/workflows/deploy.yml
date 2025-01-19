@@ -105,7 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install docker on server
+      - name: Install docker and docker compose on server
         uses: appleboy/ssh-action@v1.0.0
         env:
           REPO: ${{ github.repository }}
@@ -118,6 +118,7 @@ jobs:
             # Set up docker
             sudo yum update -y
             sudo yum install -y docker
+            sudo yum install -y docker-compose-plugin
             sudo systemctl start docker
             sudo systemctl enable docker
             sudo usermod -aG docker $USER
