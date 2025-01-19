@@ -200,9 +200,6 @@ jobs:
           envs: REPO, DB_NAME, DB_PORT, DB_USER, DB_HOST, DB_PASSWORD, DATABASE_URL
           script: |
             # Export environment variables
-            echo "checking env vars are passed in gh actions"
-            echo "DB_NAME=${DB_NAME}"
-            echo "After export, DB_NAME is: ${DB_NAME}"
             export DB_NAME=${DB_NAME}
             export DB_PORT=${DB_PORT}
             export DB_USER=${DB_USER}
@@ -210,6 +207,12 @@ jobs:
             export DB_PASSWORD=${DB_PASSWORD}
             export DATABASE_URL=${DATABASE_URL}
             export APP_ENV=${APP_ENV}
+
+            echo "checking env vars are passed in gh actions"
+            echo "In gh, DB_NAME=${DB_NAME}"
+            echo "After export, env var DB_NAME is: ${DB_NAME}"
+            echo "What docker compose sees:"
+            docker compose config
 
             # load images and run containers
             docker load -i /tmp/app-image.tar.gz
