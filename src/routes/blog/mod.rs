@@ -1,5 +1,5 @@
 mod get;
-mod post;
+mod signup;
 
 pub use get::get;
-pub use post::post;
+pub use signup::signup;

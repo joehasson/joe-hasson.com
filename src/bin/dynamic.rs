@@ -18,7 +18,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(ssr_common.clone())
             .route("/health_check", web::get().to(routes::health_check::health_check))
             .route("/blog", web::get().to(routes::blog::get))
-            .route("/blog/signup", web::post().to(routes::blog::post))
+            .route("/blog/signup", web::post().to(routes::blog::signup))
     })
     .bind(("127.0.0.1", 8001))?;
 
