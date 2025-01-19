@@ -55,7 +55,7 @@ jobs:
         run: |
           echo "EC2_IP=$(terraform output -json | jq -r '.public_ip.value')" >> $GITHUB_OUTPUT
 
-  build:
+  build-app-container-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -72,7 +72,25 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build app docker image
+      - name: Archive and compress images ahead of SCP
+        run: >
+          docker save joe-hasson-personal-site | gzip > app-image.tar.gz
+
+      - name: Upload app image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: app-image.tar.gz
+
+  build-migration-container-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build migration docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -84,20 +102,14 @@ jobs:
 
       - name: Archive and compress images ahead of SCP
         run: >
-          docker save joe-hasson-personal-site | gzip > app-image.tar.gz
-          && docker save joe-hasson-personal-site-migrations | gzip > migrations-image.tar.gz
-
-      - name: Upload app image artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: docker-image
-          path: app-image.tar.gz
+          docker save joe-hasson-personal-site-migrations | gzip > migrations-image.tar.gz
 
       - name: Upload migrations image artifact
         uses: actions/upload-artifact@v3
         with:
           name: docker-image
           path: migrations-image.tar.gz
+
 
   prepare-server:
     needs: infrastructure
@@ -143,7 +155,7 @@ jobs:
           target: /home/ec2-user
 
   start-app:
-    needs: [infrastructure, prepare-server, build]
+    needs: [infrastructure, prepare-server, build-app-container-image, build-migration-container-image]
     runs-on: ubuntu-latest
     steps:
       - name: Download image artifact
