@@ -1,5 +1,5 @@
 # Build rust executable
-FROM rust:1.78 as chef
+FROM rust:1.84 as chef
 RUN cargo install cargo-chef
 WORKDIR /usr/src/app
 

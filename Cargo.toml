@@ -22,3 +22,15 @@ log = "0.4"
 tera = "1.20"
 anyhow = { version = "1.0", features = ["backtrace"] }
 lightningcss_rs = "0.1.0"
+
+[dependencies.sqlx]
+version = "0.8"
+default-features = false
+features = [
+    "runtime-tokio-rustls",
+    "macros",
+    "postgres",
+    "uuid",
+    "chrono",
+    "migrate"
+]
