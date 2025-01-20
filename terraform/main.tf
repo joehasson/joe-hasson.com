@@ -115,6 +115,12 @@ resource "aws_instance" "app" {
   
   key_name = aws_key_pair.deployer.key_name
 
+  root_block_device {
+    volume_size = 20  # Size in GB
+    volume_type = "gp3"  # Using gp3 as it's more cost-effective than gp2
+    encrypted   = true
+  }
+
   tags = {
     Name = "${var.project_name}-instance"
   }
