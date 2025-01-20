@@ -18,12 +18,12 @@ services:
 
   migrations:
     image: joe-hasson-personal-site-migrations:latest
+    restart: on-failure:20
     environment:
       - DATABASE_URL=${CONTAINERISED_DATABASE_URL}
     depends_on:
-      - db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:15
@@ -40,6 +40,5 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-volumes:
-  postgres_data:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
