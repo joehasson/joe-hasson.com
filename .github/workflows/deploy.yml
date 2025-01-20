@@ -217,8 +217,8 @@ jobs:
             # load images and run containers
             docker load -i /tmp/app-image.tar.gz
             docker load -i /tmp/migrations-image.tar.gz
-            docker compose up -d --wait
-            docker compose up --profile setup up migrations
+            docker compose up -d --wait web db
+            docker compose up migrations
             
       - name: Purge Cloudflare Cache
         run: |

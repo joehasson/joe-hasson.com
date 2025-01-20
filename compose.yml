@@ -15,8 +15,6 @@ services:
         condition: service_healthy
 
   migrations:
-    profiles:
-      - setup
     image: joe-hasson-personal-site-migrations:latest
     environment:
       - DATABASE_URL=${CONTAINERISED_DATABASE_URL}
