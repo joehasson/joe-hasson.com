@@ -168,8 +168,8 @@ jobs:
           source: "compose.yml"
           target: /home/ec2-user
 
-  start-app:
-    needs: [infrastructure, prepare-server, build-app-container-image, build-migration-container-image]
+  release:
+    needs: [typecheck-and-test, infrastructure, prepare-server, build-app-container-image, build-migration-container-image]
     runs-on: ubuntu-latest
     steps:
       - name: Download image artifact
