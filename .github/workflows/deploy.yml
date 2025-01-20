@@ -205,7 +205,7 @@ jobs:
             export DB_USER=${DB_USER}
             export DB_HOST=${DB_HOST}
             export DB_PASSWORD=${DB_PASSWORD}
-            export DATABASE_URL=${DATABASE_URL}
+            export CONTAINERISED_DATABASE_URL=${DATABASE_URL}
             export APP_ENV=${APP_ENV}
 
             echo "checking env vars are passed in gh actions"
