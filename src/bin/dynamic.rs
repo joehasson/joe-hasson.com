@@ -42,7 +42,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(connection_pool.clone())
             .route("/health_check", web::get().to(routes::health_check::health_check))
             .route("/blog", web::get().to(routes::blog::get))
-            .route("/blog/signup", web::post().to(routes::blog::signup))
+            .route("/subscriptions", web::post().to(routes::subscriptions::subscribe))
+            .route("/subscriptions/confirm", web::get().to(routes::subscriptions::confirm))
     })
     .bind(("127.0.0.1", 8001))?;
 

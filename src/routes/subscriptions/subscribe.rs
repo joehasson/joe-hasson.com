@@ -144,7 +144,7 @@ fn generate_subscription_token() -> String {
         .collect()
 }
 
-pub async fn signup(
+pub async fn subscribe(
     form: web::Form<FormData>,
     connection_pool: web::Data<PgPool>
     ) -> Result<HttpResponse, SubscribeError> {
