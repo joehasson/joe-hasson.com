@@ -191,7 +191,7 @@ jobs:
           DB_USER: ${{ vars.DB_USER }}
           DB_HOST: ${{ vars.DB_HOST }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DATABASE_URL: postgres://${{ vars.DB_USER }}:${{ vars.DB_PASSWORD}}@${{ vars.DB_HOST }}:${{ vars.DB_PORT}}/${{ vars.DB_NAME}}
+          DATABASE_URL: postgres://${{ vars.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ vars.DB_HOST }}:${{ vars.DB_PORT}}/${{ vars.DB_NAME}}
           APP_ENV: production
         with:
           username: ec2-user
