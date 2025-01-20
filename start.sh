@@ -5,7 +5,7 @@
 
 
 MAX_RETRIES=10
-RETRY_INTERVAL=20
+RETRY_INTERVAL=10
 count=0
 
 until sqlx migrate run; do
