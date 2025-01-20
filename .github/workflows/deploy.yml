@@ -128,11 +128,11 @@ jobs:
           script: |
             set -e
             # Set up docker
-            #sudo yum update -y
-            #sudo yum install -y docker
-            #sudo systemctl start docker
-            #sudo systemctl enable docker
-            #sudo usermod -aG docker $USER
+            sudo yum update -y
+            sudo yum install -y docker
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            sudo usermod -aG docker $USER
             # Stop and remove all existing containers - there might be
             # an image running already
             if [ -n "$(docker ps -q)" ]; then
