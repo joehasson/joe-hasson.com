@@ -16,6 +16,8 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # build application
 ## build dynamic
 COPY src/ src/
+# Copy the sqlx-data.json file if you're using the offline mode
+COPY .sqlx/ .sqlx/
 COPY Cargo.lock Cargo.toml .
 RUN cargo build --bin dynamic-site --release
 ## build static as well
