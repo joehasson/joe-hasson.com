@@ -57,10 +57,18 @@ impl TryFrom<FormData> for SubscriberEmail {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum InsertSubscriberError {
+    #[error("Email address already exists")]
+    DuplicateEmail,
+    #[error("Database error: {0}")]
+    DatabaseError(#[from] sqlx::Error),
+}
+
 pub async fn insert_subscriber(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber: &SubscriberEmail
-) -> Result<Uuid, sqlx::error::Error> {
+) -> Result<Uuid, InsertSubscriberError> {
     let id = Uuid::new_v4();
     let query = sqlx::query!(
         r#"
@@ -73,9 +81,19 @@ pub async fn insert_subscriber(
         false
     );
 
-    transaction.execute(query).await?;
+    match transaction.execute(query).await {
+        Ok(_) => return Ok(id),
+        Err(e) => {
+            if let Some(db_error) = e.as_database_error() {
+                if db_error.code() == Some("23505".into()) {
+                    return Err(InsertSubscriberError::DuplicateEmail);
+                }
+            }
 
-    Ok(id)
+            return Err(e.into());
+        }
+    }
+    
 }
 
 pub struct StoreTokenError(sqlx::Error);
@@ -136,21 +154,34 @@ pub async fn signup(
         .await
         .context("Failed to acquire a Postgres connection from the pool")?;
 
-    let subscriber_id = insert_subscriber(&mut transaction, &subscriber)
-        .await
-        .context("Failed to insert a new subscriber in the database")?;
-        
-    let subscription_token = generate_subscription_token();
-    store_token(&mut transaction, subscriber_id, &subscription_token)
-        .await
-        .context("Failed to insert subscription token in the database")?;
+    match insert_subscriber(&mut transaction, &subscriber).await {
+        Ok(subscriber_id) => {
+            let subscription_token = generate_subscription_token();
+            store_token(&mut transaction, subscriber_id, &subscription_token)
+                .await
+                .context("Failed to insert subscription token in the database")?;
 
-    transaction.commit()
-        .await
-        .context("Failed to commit SQL transaction to the database")?;
+            transaction.commit()
+                .await
+                .context("Failed to commit SQL transaction to the database")?;
 
-    Ok(HttpResponse::SeeOther()
-       .insert_header((LOCATION, "/blog"))
-       .finish()
-    )
+            Ok(HttpResponse::SeeOther()
+               .insert_header((LOCATION, "/blog"))
+               .finish()
+            )
+        },
+        Err(InsertSubscriberError::DuplicateEmail) => {
+            // TODO: resend confirmation email here when email is implemented
+            
+            Ok(HttpResponse::SeeOther()
+               .insert_header((LOCATION, "/blog"))
+               .finish()
+            )
+        }
+        Err(e) => {
+            Err(SubscribeError::UnexpectedError(
+                anyhow::anyhow!(e).context("Failed to insert new subscriber into database")
+            ))
+        }
+    }
 }
