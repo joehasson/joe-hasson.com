@@ -79,3 +79,13 @@
 .input-group button:hover {
     background: #1557b0;
 }
+
+.flash-message {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 12px;
+    border-radius: 4px;
+    margin: 15px 0;
+    border: 1px solid #bbdefb;
+    max-width: 400px;
+}
