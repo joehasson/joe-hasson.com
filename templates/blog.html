@@ -8,11 +8,15 @@
 <div class="signup-container">
     <form class="signup-form" action="/subscriptions" method="post">
         <h3>Subscribe to My Blog</h3>
+
         <div class="input-group">
             <input type="email" name="email" placeholder="Enter your email" required>
             <button type="submit">Subscribe</button>
         </div>
     </form>
+    {% if flash is defined %}
+    <p>{{ flash }}</p>
+    {% endif %}
 </div>
 <div class="blog-post">
     <h2>First Blog Post</h2>

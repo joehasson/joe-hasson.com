@@ -4,7 +4,9 @@ services:
     ports:
       - "${APP_PORT:-80}:80"
     environment:
-      - APP_ENV=local
+      - APP_ENV=${APP_ENV}
+      - APP_BASE_URL=${APP_BASE_URL}
+      - APP_HMAC_SECRET=${APP_HMAC_SECRET}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}

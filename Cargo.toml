@@ -25,7 +25,9 @@ tera = "1.20"
 serde = { version = "1", features = ["derive"]}
 uuid = { version = "1", features = ["v4", "serde"] }
 rand = "0.8.5"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 thiserror = "2.0.11"
+actix-session = { version = "0.7", features = ["cookie-session"] }
 validator = "0.16"
 anyhow = { version = "1.0", features = ["backtrace"] }
 claims = "0.7"
@@ -45,4 +47,15 @@ features = [
     "uuid",
     "chrono",
     "migrate"
+]
+
+[dependencies.lettre]
+version = "0.11.9"
+default-features = false
+features = [
+    "builder",
+    "tokio1-rustls-tls",
+    "smtp-transport",
+    "tokio1",
+    "pool"
 ]

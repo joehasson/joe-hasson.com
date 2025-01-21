@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Work in project root
 cd $(dirname $0)/..
 

@@ -206,7 +206,11 @@ jobs:
           DB_HOST: ${{ vars.DB_HOST }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DATABASE_URL: postgres://${{ vars.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ vars.DB_HOST }}:${{ vars.DB_PORT}}/${{ vars.DB_NAME}}
-          APP_ENV: production
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+          APP_HMAC_SECRET: ${{ secrets.APP_HMAC_SECRET }}
+          BLOG_EMAIL_ADDRESS: ${{ vars.BLOG_EMAIL_ADDRESS }}
+          BLOG_EMAIL_PASSWORD: ${{ secrets.BLOG_EMAIL_PASSWORD }}
         with:
           username: ec2-user
           host: ${{ needs.infrastructure.outputs.ec2_ip }}
@@ -221,10 +225,11 @@ jobs:
             export DB_PASSWORD=${DB_PASSWORD}
             export CONTAINERISED_DATABASE_URL=${DATABASE_URL}
             export APP_ENV=${APP_ENV}
+            export APP_BASE_URL=${APP_BASE_URL}
+            export APP_HMAC_SECRET=${APP_HMAC_SECRET}
+            export BLOG_EMAIL_ADDRESS=${BLOG_EMAIL_ADDRESS}
+            export BLOG_EMAIL_PASSWORD=${BLOG_EMAIL_PASSWORD}
 
-            echo "checking env vars are passed in gh actions"
-            echo "In gh, DB_NAME=${DB_NAME}"
-            echo "After export, env var DB_NAME is: ${DB_NAME}"
             echo "What docker compose sees:"
             docker compose config
 
