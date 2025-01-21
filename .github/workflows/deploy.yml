@@ -221,7 +221,18 @@ jobs:
           username: ec2-user
           host: ${{ needs.infrastructure.outputs.ec2_ip }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          envs: REPO, DB_NAME, DB_PORT, DB_USER, DB_HOST, DB_PASSWORD, DATABASE_URL
+          envs: > 
+            DB_NAME,
+            DB_PORT,
+            DB_USER,
+            DB_HOST,
+            DB_PASSWORD,
+            DATABASE_URL,
+            APP_ENV,
+            APP_BASE_URL,
+            APP_HMAC_SECRET,
+            BLOG_EMAIL_ADDRESS,
+            BLOG_EMAIL_PASSWORD
           script: |
             # Export environment variables
             export DB_NAME=${DB_NAME}
