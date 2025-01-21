@@ -67,7 +67,7 @@ where
         from: &str,
         app_base_url: String,
     ) -> Result<EmailClient<T>, String> {
-        let sender: Mailbox = match format!("Joe Hasson's Blog <{}>", from).parse() {
+        let sender: Mailbox = match format!("Joe Hasson Blog <{}>", from).parse() {
             Ok(mailbox) => mailbox,
             Err(_) => return Err("Invalid sender".into()),
         };
