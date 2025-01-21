@@ -3,12 +3,10 @@ use actix_session::SessionMiddleware;
 use actix_web::{cookie::Key, middleware::Logger, web, App, HttpServer};
 use core::time::Duration;
 use dotenvy::dotenv;
-use env_logger;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::AsyncSmtpTransport;
 use lettre::transport::smtp::PoolConfig;
 use lettre::Tokio1Executor;
-use log;
 use secrecy::{ExposeSecret, Secret};
 use shared::{email_client::EmailClient, routes, ssr::SsrCommon};
 use sqlx::{
@@ -18,7 +16,7 @@ use sqlx::{
 use std::sync::Arc;
 
 fn read_env_or_panic(varname: &str) -> String {
-    std::env::var(varname).expect(format!("Failed to read env var {}", varname).as_ref())
+    std::env::var(varname).unwrap_or_else(|_| panic!("Failed to read env var {}", varname))
 }
 
 #[actix_web::main]

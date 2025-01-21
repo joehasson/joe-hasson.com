@@ -44,7 +44,7 @@ impl TryFrom<FormData> for SubscriberEmail {
     type Error = String;
 
     fn try_from(form: FormData) -> Result<Self, Self::Error> {
-        Ok(SubscriberEmail::parse(form.email)?)
+        SubscriberEmail::parse(form.email)
     }
 }
 
@@ -73,7 +73,7 @@ pub async fn insert_subscriber(
     );
 
     match transaction.execute(query).await {
-        Ok(_) => return Ok(id),
+        Ok(_) => Ok(id),
         Err(e) => {
             if let Some(db_error) = e.as_database_error() {
                 if db_error.code() == Some("23505".into()) {
@@ -81,7 +81,7 @@ pub async fn insert_subscriber(
                 }
             }
 
-            return Err(e.into());
+            Err(e.into())
         }
     }
 }
@@ -126,7 +126,7 @@ pub async fn store_token(
     transaction
         .execute(query)
         .await
-        .map_err(|e| StoreTokenError(e))?;
+        .map_err(StoreTokenError)?;
 
     Ok(())
 }
