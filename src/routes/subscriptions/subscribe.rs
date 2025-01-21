@@ -123,10 +123,7 @@ pub async fn store_token(
         subscriber_id
     );
 
-    transaction
-        .execute(query)
-        .await
-        .map_err(StoreTokenError)?;
+    transaction.execute(query).await.map_err(StoreTokenError)?;
 
     Ok(())
 }
