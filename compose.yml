@@ -10,6 +10,8 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_HOST=db
       - DB_PORT=${DB_PORT}
+      - BLOG_EMAIL_ADDRESS=${BLOG_EMAIL_ADDRESS}
+      - BLOG_EMAIL_PASSWORD=${BLOG_EMAIL_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -32,7 +34,7 @@ services:
       - "5432:5432"
     healthcheck:
       test: >         
-        /bin/sh -c 'pg_isready -U ${DB_USER} &&
+        /bin/sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME} &&
         psql -U ${DB_USER} -d ${DB_NAME} -c "SELECT 1"'
       interval: 5s
       timeout: 5s
