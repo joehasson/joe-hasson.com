@@ -37,7 +37,7 @@ async fn main() -> std::io::Result<()> {
         .password(&read_env_or_panic("DB_PASSWORD"))
         .database(&read_env_or_panic("DB_NAME"))
         .port(read_env_or_panic("DB_PORT").parse::<u16>().expect("DB_PORT was not a u16"))
-        .ssl_mode(if read_env_or_panic("APP_ENV") == "local" { PgSslMode::Prefer } else { PgSslMode::Require});
+        .ssl_mode(PgSslMode::Prefer);
 
     let connection_pool = web::Data::new(
         PgPool::connect_with(options)
