@@ -55,7 +55,7 @@ pub async fn confirm(
         .context("Failed to register subscriber confirmation in database")?;
 
     session
-        .set_flash("Subscription confirmed!")
+        .set_flash("Your subscription is confirmed!")
         .context("Failed to set session state")?;
 
     Ok(HttpResponse::SeeOther()

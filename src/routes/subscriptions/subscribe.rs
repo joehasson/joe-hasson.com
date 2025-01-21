@@ -215,7 +215,7 @@ where
                 .context("Failed to send confirmation email")?;
 
             session
-                .set_flash("Email already exists. Check your inbox for a new confirmation email.")
+                .set_flash("Email already registed. A new confirmation email has been sent to your inbox in case you haven't confirm already.")
                 .context("Error setting session state")?;
         }
         Err(e) => {
