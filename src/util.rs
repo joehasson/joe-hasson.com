@@ -1,5 +1,6 @@
-pub fn e500<T>(e: T) -> actix_web::Error 
-where T: 'static + std::fmt::Debug + std::fmt::Display
+pub fn e500<T>(e: T) -> actix_web::Error
+where
+    T: 'static + std::fmt::Debug + std::fmt::Display,
 {
     actix_web::error::ErrorInternalServerError(e)
 }
@@ -16,4 +17,3 @@ pub fn error_chain_fmt(
     }
     Ok(())
 }
-

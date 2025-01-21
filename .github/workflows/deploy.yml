@@ -8,13 +8,16 @@ on:
     branches: [ main ]
 
 jobs:
-  typecheck-and-test:
+  lint-and-typecheck-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Check format
+        run: cargo fmt --all -- --check
       
       - name: cargo check
         run: SQLX_OFFLINE=true cargo check
@@ -169,7 +172,7 @@ jobs:
           target: /home/ec2-user
 
   release:
-    needs: [typecheck-and-test, infrastructure, prepare-server, build-app-container-image, build-migration-container-image]
+    needs: [lint-and-typecheck-and-test, infrastructure, prepare-server, build-app-container-image, build-migration-container-image]
     runs-on: ubuntu-latest
     steps:
       - name: Download image artifact

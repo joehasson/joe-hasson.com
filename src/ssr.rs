@@ -1,10 +1,10 @@
 use anyhow;
-use tera::{Tera, Context};
+use tera::{Context, Tera};
 
 #[derive(Debug, Clone)]
 pub struct SsrCommon {
     tera: Tera,
-    base_context: Context
+    base_context: Context,
 }
 
 impl SsrCommon {
@@ -13,7 +13,7 @@ impl SsrCommon {
         let raw_css = std::fs::read_to_string("build/css/bundle.css")?;
         let mut base_context = Context::new();
         base_context.insert("css", &raw_css);
-        Ok(Self { tera, base_context})
+        Ok(Self { tera, base_context })
     }
 
     pub fn render(&self, template: &str) -> Result<String, tera::Error> {

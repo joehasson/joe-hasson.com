@@ -1,6 +1,6 @@
-mod util;
 mod domain;
-mod flash_message;
 pub mod email_client;
-pub mod ssr;
+mod flash_message;
 pub mod routes;
+pub mod ssr;
+mod util;

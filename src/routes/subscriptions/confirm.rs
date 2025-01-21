@@ -1,20 +1,20 @@
-use actix_web::{web, http::header::LOCATION, HttpResponse, http::StatusCode, ResponseError};
+use crate::{flash_message::Flash, util::error_chain_fmt};
+use actix_session::Session;
+use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, ResponseError};
 use anyhow::Context;
 use sqlx::PgPool;
 use uuid::Uuid;
-use actix_session::Session;
-use crate::{util::error_chain_fmt, flash_message::Flash};
 
 #[derive(serde::Deserialize)]
 pub struct Parameters {
-    subscription_token: String
+    subscription_token: String,
 }
 
 #[derive(thiserror::Error)]
 pub enum SubscriptionConfirmError {
     InvalidSubscriptionToken,
     #[error(transparent)]
-    UnexpectedError(#[from] anyhow::Error)
+    UnexpectedError(#[from] anyhow::Error),
 }
 
 impl std::fmt::Debug for SubscriptionConfirmError {
@@ -25,14 +25,17 @@ impl std::fmt::Debug for SubscriptionConfirmError {
 
 impl std::fmt::Display for SubscriptionConfirmError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "An error was encountered while trying to confirm a subscription.")
+        write!(
+            f,
+            "An error was encountered while trying to confirm a subscription."
+        )
     }
 }
 impl ResponseError for SubscriptionConfirmError {
     fn status_code(&self) -> StatusCode {
         match self {
             Self::InvalidSubscriptionToken => StatusCode::UNAUTHORIZED,
-            Self::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR
+            Self::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
@@ -40,12 +43,9 @@ impl ResponseError for SubscriptionConfirmError {
 pub async fn confirm(
     pool: web::Data<PgPool>,
     parameters: web::Query<Parameters>,
-    session: Session
+    session: Session,
 ) -> Result<HttpResponse, SubscriptionConfirmError> {
-    let subscriber_id = get_subscriber_id_from_token(
-            &pool,
-            &parameters.subscription_token
-        )
+    let subscriber_id = get_subscriber_id_from_token(&pool, &parameters.subscription_token)
         .await
         .context("Failed to look up subscriber id in subscription_tokens table")?
         .ok_or(SubscriptionConfirmError::InvalidSubscriptionToken)?;
@@ -54,7 +54,8 @@ pub async fn confirm(
         .await
         .context("Failed to register subscriber confirmation in database")?;
 
-    session.set_flash("Subscription confirmed!")
+    session
+        .set_flash("Subscription confirmed!")
         .context("Failed to set session state")?;
 
     Ok(HttpResponse::SeeOther()
@@ -64,25 +65,25 @@ pub async fn confirm(
 
 async fn get_subscriber_id_from_token(
     pool: &PgPool,
-    token: &str
+    token: &str,
 ) -> Result<Option<Uuid>, sqlx::Error> {
     let result = sqlx::query!(
         r#"SELECT subscriber_id FROM subscription_tokens 
         WHERE subscription_token = $1
-        "#, token)
+        "#,
+        token
+    )
     .fetch_optional(pool)
     .await?;
     Ok(result.map(|record| record.subscriber_id))
 }
 
-async fn confirm_subscriber(
-    pool: &PgPool,
-    subscriber_id: Uuid
-) -> Result<(), sqlx::Error> {
+async fn confirm_subscriber(pool: &PgPool, subscriber_id: Uuid) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"UPDATE subscriptions SET confirmed = true WHERE id = $1"#,
         subscriber_id
-        ).execute(pool)
+    )
+    .execute(pool)
     .await?;
     Ok(())
 }

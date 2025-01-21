@@ -1,14 +1,17 @@
 use anyhow::Result;
-use lightningcss::stylesheet::{StyleSheet, ParserOptions};
+use lightningcss::stylesheet::{ParserOptions, StyleSheet};
 use shared::ssr::SsrCommon;
 
 fn main() -> Result<()> {
     // Work in the project root
     let executable_path = std::env::current_exe()?;
     let project_root = executable_path
-        .parent().expect("Failed to find project root")
-        .parent().expect("Failed to find project root")
-        .parent().expect("Failed to find project root");
+        .parent()
+        .expect("Failed to find project root")
+        .parent()
+        .expect("Failed to find project root")
+        .parent()
+        .expect("Failed to find project root");
     std::env::set_current_dir(project_root)?;
 
     // Create build dir if it doesnt exist already

@@ -1,22 +1,23 @@
-use actix_web::{web, http::header::LOCATION, HttpResponse, http::StatusCode, ResponseError};
+use crate::{
+    domain::SubscriberEmail, email_client::EmailClient, flash_message::Flash, util::error_chain_fmt,
+};
 use actix_session::Session;
+use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, ResponseError};
 use anyhow::Context;
+use chrono::Utc;
 use lettre::AsyncTransport;
-use sqlx::{PgPool, Postgres, Transaction, Executor};
+use log;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+use sqlx::{Executor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
-use crate::{flash_message::Flash, util::error_chain_fmt, email_client::EmailClient, domain::SubscriberEmail};
-use chrono::Utc;
-use log;
-
 
 #[derive(thiserror::Error)]
 pub enum SubscribeError {
     #[error("{0}")]
     ValidationError(String),
     #[error(transparent)]
-    UnexpectedError(#[from] anyhow::Error)
+    UnexpectedError(#[from] anyhow::Error),
 }
 
 impl std::fmt::Debug for SubscribeError {
@@ -29,14 +30,14 @@ impl ResponseError for SubscribeError {
     fn status_code(&self) -> StatusCode {
         match self {
             Self::ValidationError(_) => StatusCode::BAD_REQUEST,
-            Self::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR
+            Self::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
-    email: String
+    email: String,
 }
 
 impl TryFrom<FormData> for SubscriberEmail {
@@ -57,7 +58,7 @@ pub enum InsertSubscriberError {
 
 pub async fn insert_subscriber(
     transaction: &mut Transaction<'_, Postgres>,
-    subscriber: &SubscriberEmail
+    subscriber: &SubscriberEmail,
 ) -> Result<Uuid, InsertSubscriberError> {
     let id = Uuid::new_v4();
     let query = sqlx::query!(
@@ -95,7 +96,10 @@ impl std::fmt::Debug for StoreTokenError {
 
 impl std::fmt::Display for StoreTokenError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "A database error was encountered while trying to store a subscription token")
+        write!(
+            f,
+            "A database error was encountered while trying to store a subscription token"
+        )
     }
 }
 
@@ -108,19 +112,21 @@ impl std::error::Error for StoreTokenError {
 pub async fn store_token(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber_id: Uuid,
-    subscription_token: &str
-) -> Result<(), StoreTokenError>{
+    subscription_token: &str,
+) -> Result<(), StoreTokenError> {
     let query = sqlx::query!(
         r#"
             INSERT INTO subscription_tokens (subscription_token, subscriber_id)
             VALUES ($1, $2)
         "#,
-        subscription_token, subscriber_id
+        subscription_token,
+        subscriber_id
     );
 
-    transaction.execute(query)
+    transaction
+        .execute(query)
         .await
-        .map_err(|e| { StoreTokenError(e)})?;
+        .map_err(|e| StoreTokenError(e))?;
 
     Ok(())
 }
@@ -135,7 +141,7 @@ fn generate_subscription_token() -> String {
 
 async fn get_subscription_token_from_subscriber_email(
     connection_pool: &PgPool,
-    subscriber_email: &SubscriberEmail
+    subscriber_email: &SubscriberEmail,
 ) -> Result<String, anyhow::Error> {
     sqlx::query!(
         r#"
@@ -143,26 +149,27 @@ async fn get_subscription_token_from_subscriber_email(
         FROM subscriptions JOIN subscription_tokens
         ON subscriptions.id = subscription_tokens.subscriber_id
         WHERE subscriptions.email = $1
-        "#, subscriber_email.as_ref())
+        "#,
+        subscriber_email.as_ref()
+    )
     .fetch_optional(connection_pool)
     .await?
     .map(|record| record.subscription_token)
-    .ok_or(
-        anyhow::anyhow!(
-            format!("Unable to find subscription token for email {}", subscriber_email)
-        )
-    )
+    .ok_or(anyhow::anyhow!(format!(
+        "Unable to find subscription token for email {}",
+        subscriber_email
+    )))
 }
 
 pub async fn subscribe<T>(
     form: web::Form<FormData>,
     connection_pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient<T>>,
-    session: Session
-    ) -> Result<HttpResponse, SubscribeError>
+    session: Session,
+) -> Result<HttpResponse, SubscribeError>
 where
     T: AsyncTransport + Sync + Send,
-    T::Error: std::error::Error 
+    T::Error: std::error::Error,
 {
     let subscriber_email = form.0.try_into().map_err(SubscribeError::ValidationError)?;
     let mut transaction = connection_pool
@@ -181,39 +188,38 @@ where
                 .context("Failed to insert subscription token in the database")?;
 
             log::info!("Committing transaction...");
-            transaction.commit()
+            transaction
+                .commit()
                 .await
                 .context("Failed to commit SQL transaction to the database")?;
 
             log::info!("Sending confirmation email...");
-            email_client.send_confirmation_email(
-                &subscription_token,
-                subscriber_email
-            ).await.context("Error sending confirmation")?;
+            email_client
+                .send_confirmation_email(&subscription_token, subscriber_email)
+                .await
+                .context("Error sending confirmation")?;
 
             session.set_flash(
                 "Check your inbox for a confirmation email and follow the link to complete your registration."
             ).context("Error setting session state")?;
-        },
+        }
         // Resend existing confirmation token
         Err(InsertSubscriberError::DuplicateEmail) => {
             log::info!("Duplicate email! Rolling back...");
             transaction.rollback().await.context("Transaction failed")?;
-            let subscription_token = get_subscription_token_from_subscriber_email(
-                &connection_pool,
-                &subscriber_email
-            ).await?;
+            let subscription_token =
+                get_subscription_token_from_subscriber_email(&connection_pool, &subscriber_email)
+                    .await?;
 
             log::info!("Resending confirmation email...");
-            email_client.send_confirmation_email(
-                &subscription_token,
-                subscriber_email
-            ).await
-            .context("Failed to send confirmation email")?;
-            
-            session.set_flash(
-                "Email already exists. Check your inbox for a new confirmation email."
-            ).context("Error setting session state")?;
+            email_client
+                .send_confirmation_email(&subscription_token, subscriber_email)
+                .await
+                .context("Failed to send confirmation email")?;
+
+            session
+                .set_flash("Email already exists. Check your inbox for a new confirmation email.")
+                .context("Error setting session state")?;
         }
         Err(e) => {
             log::info!("Unknown error! Rolling transaction back...");
@@ -227,6 +233,5 @@ where
 
     Ok(HttpResponse::SeeOther()
         .insert_header((LOCATION, "/blog"))
-        .finish()
-    )
+        .finish())
 }

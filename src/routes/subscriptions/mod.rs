@@ -1,5 +1,5 @@
-mod subscribe;
 mod confirm;
+mod subscribe;
 
-pub use subscribe::subscribe;
 pub use confirm::confirm;
+pub use subscribe::subscribe;

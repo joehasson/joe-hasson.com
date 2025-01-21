@@ -1,22 +1,24 @@
+use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
 use actix_web::{cookie::Key, middleware::Logger, web, App, HttpServer};
-use actix_session::storage::CookieSessionStore;
 use core::time::Duration;
-use shared::{ssr::SsrCommon, routes, email_client::EmailClient};
 use dotenvy::dotenv;
 use env_logger;
-use log;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::AsyncSmtpTransport;
 use lettre::transport::smtp::PoolConfig;
 use lettre::Tokio1Executor;
-use sqlx::{postgres::{PgConnectOptions, PgSslMode}, PgPool};
-use secrecy::{Secret, ExposeSecret};
+use log;
+use secrecy::{ExposeSecret, Secret};
+use shared::{email_client::EmailClient, routes, ssr::SsrCommon};
+use sqlx::{
+    postgres::{PgConnectOptions, PgSslMode},
+    PgPool,
+};
 use std::sync::Arc;
 
 fn read_env_or_panic(varname: &str) -> String {
-    std::env::var(varname)
-        .expect(format!("Failed to read env var {}", varname).as_ref())
+    std::env::var(varname).expect(format!("Failed to read env var {}", varname).as_ref())
 }
 
 #[actix_web::main]
@@ -25,9 +27,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     log::info!("Setting up SSR...");
-    let ssr_common = web::Data::new(
-        SsrCommon::load().expect("Failed to set up SSR")
-    );
+    let ssr_common = web::Data::new(SsrCommon::load().expect("Failed to set up SSR"));
 
     log::info!("Establishing database connection...");
 
@@ -36,22 +36,25 @@ async fn main() -> std::io::Result<()> {
         .username(&read_env_or_panic("DB_USER"))
         .password(&read_env_or_panic("DB_PASSWORD"))
         .database(&read_env_or_panic("DB_NAME"))
-        .port(read_env_or_panic("DB_PORT").parse::<u16>().expect("DB_PORT was not a u16"))
+        .port(
+            read_env_or_panic("DB_PORT")
+                .parse::<u16>()
+                .expect("DB_PORT was not a u16"),
+        )
         .ssl_mode(PgSslMode::Prefer);
 
     let connection_pool = web::Data::new(
         PgPool::connect_with(options)
-        .await
-        .expect("Failed to establish database connection"));
+            .await
+            .expect("Failed to establish database connection"),
+    );
 
     log::info!("Setting up email client...");
     let email_address = read_env_or_panic("BLOG_EMAIL_ADDRESS");
     let email_password = Secret::new(read_env_or_panic("BLOG_EMAIL_PASSWORD"));
     let app_base_url = read_env_or_panic("APP_BASE_URL");
-    let email_creds = Credentials::new(
-        email_address.clone(),
-        email_password.expose_secret().into()
-    );
+    let email_creds =
+        Credentials::new(email_address.clone(), email_password.expose_secret().into());
 
     let email_transport = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay("smtp.gmail.com")
         .expect("Failed to create smtp client")
@@ -60,15 +63,10 @@ async fn main() -> std::io::Result<()> {
         .pool_config(PoolConfig::new().max_size(20))
         .port(587)
         .build();
-    
 
     let email_client = web::Data::new(
-        EmailClient::new(
-            Arc::new(email_transport),
-            &email_address,
-            app_base_url
-        )
-        .expect("Unable to create email client")
+        EmailClient::new(Arc::new(email_transport), &email_address, app_base_url)
+            .expect("Unable to create email client"),
     );
 
     // Set up secret key for flash messaging middleware
@@ -80,20 +78,26 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .wrap(
-                SessionMiddleware::builder(
-                    CookieSessionStore::default(),
-                    secret_key.clone()
-                ).build()
+                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                    .build(),
             )
             .app_data(ssr_common.clone())
             .app_data(connection_pool.clone())
             .app_data(email_client.clone())
-            .route("/health_check", web::get().to(routes::health_check::health_check))
+            .route(
+                "/health_check",
+                web::get().to(routes::health_check::health_check),
+            )
             .route("/blog", web::get().to(routes::blog::get))
-            .route("/subscriptions", web::post().to(
-                    routes::subscriptions::subscribe::<AsyncSmtpTransport<Tokio1Executor>>
-            ))
-            .route("/subscriptions/confirm", web::get().to(routes::subscriptions::confirm))
+            .route(
+                "/subscriptions",
+                web::post()
+                    .to(routes::subscriptions::subscribe::<AsyncSmtpTransport<Tokio1Executor>>),
+            )
+            .route(
+                "/subscriptions/confirm",
+                web::get().to(routes::subscriptions::confirm),
+            )
     })
     .bind(("127.0.0.1", 8001))?;
 

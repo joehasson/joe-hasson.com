@@ -1,16 +1,16 @@
 use crate::domain::SubscriberEmail;
+use crate::util::error_chain_fmt;
 use lettre::message::Mailbox;
 use lettre::message::{Message, MultiPart};
 use lettre::AsyncTransport;
-use std::sync::Arc;
-use crate::util::error_chain_fmt;
 use log;
 use std::error::Error as StdError;
+use std::sync::Arc;
 
 pub struct EmailClient<T: AsyncTransport + Send + Sync> {
     smtp_client: Arc<T>,
     sender: Mailbox,
-    app_base_url: String
+    app_base_url: String,
 }
 
 // TODO: nice recursive Debug trait like in routes/subscriptions.rs
@@ -57,12 +57,16 @@ impl std::error::Error for EmailClientError {
     }
 }
 
-impl<T> EmailClient<T> 
-where 
+impl<T> EmailClient<T>
+where
     T: AsyncTransport + Send + Sync,
-    T::Error: std::error::Error
+    T::Error: std::error::Error,
 {
-    pub fn new(smtp_client: Arc<T>, from: &str, app_base_url: String) -> Result<EmailClient<T>, String> {
+    pub fn new(
+        smtp_client: Arc<T>,
+        from: &str,
+        app_base_url: String,
+    ) -> Result<EmailClient<T>, String> {
         let sender: Mailbox = match format!("Joe Hasson's Blog <{}>", from).parse() {
             Ok(mailbox) => mailbox,
             Err(_) => return Err("Invalid sender".into()),
@@ -70,7 +74,7 @@ where
         Ok(EmailClient {
             smtp_client,
             sender,
-            app_base_url
+            app_base_url,
         })
     }
 
@@ -90,7 +94,7 @@ where
             .multipart(MultiPart::alternative_plain_html(
                 String::from(text_content),
                 String::from(html_content),
-        ))?;
+            ))?;
 
         log::info!("About to send email...");
         match self.smtp_client.send(message).await {
@@ -111,7 +115,7 @@ where
     pub async fn send_confirmation_email(
         &self,
         subscription_token: &str,
-        subscriber_email: SubscriberEmail
+        subscriber_email: SubscriberEmail,
     ) -> Result<(), EmailClientError> {
         let confirmation_link = format!(
             "{}/subscriptions/confirm?subscription_token={}",
@@ -119,21 +123,23 @@ where
         );
         log::info!("Sending confirmation email with link {}", confirmation_link);
 
-        let html_content = &format!("
+        let html_content = &format!(
+            "
             Thanks for signing up to my blog! 
             <br /> Click <a href=\"{}\">here</a>
             to confirm your subscription.
-            ", confirmation_link
+            ",
+            confirmation_link
         );
-        let text_content = &format!("
+        let text_content = &format!(
+            "
             Thanks for signing up to my blog!
             Visit {} to confirm your subscription.
             ",
             confirmation_link
         );
-        self.send_email(
-            &subscriber_email, "Welcome!", html_content, text_content
-        ).await?;
+        self.send_email(&subscriber_email, "Welcome!", html_content, text_content)
+            .await?;
         Ok(())
     }
 }
@@ -152,7 +158,8 @@ mod tests {
     #[tokio::test]
     async fn err_if_server_errors() {
         let stub_client = Arc::new(AsyncStubTransport::new_error());
-        let client = EmailClient::new(stub_client, "test@tld.com", "localhost:8000".into()).unwrap();
+        let client =
+            EmailClient::new(stub_client, "test@tld.com", "localhost:8000".into()).unwrap();
 
         let recipient = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
         let subject: String = Sentence(1..2).fake();
@@ -168,7 +175,8 @@ mod tests {
     #[tokio::test]
     async fn ok_if_server_ok() {
         let stub_client = Arc::new(AsyncStubTransport::new_ok());
-        let client = EmailClient::new(stub_client, "test@tld.com", "localhost:8000".into()).unwrap();
+        let client =
+            EmailClient::new(stub_client, "test@tld.com", "localhost:8000".into()).unwrap();
 
         let recipient = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
         let subject: String = Sentence(1..2).fake();

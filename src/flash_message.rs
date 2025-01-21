@@ -12,10 +12,10 @@ impl Flash for Session {
     }
 
     fn get_flash(&self) -> Option<String> {
-        self.get("_flash").ok().flatten() }
+        self.get("_flash").ok().flatten()
+    }
 
     fn clear_flash(&self) {
         self.remove("_flash");
     }
 }
-
