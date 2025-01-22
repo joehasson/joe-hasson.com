@@ -1,6 +1,0 @@
-# Expose database port LOCALLY ONLY so that sqlx can typecheck
-# against a live version of the database.
-services:
-  db:
-    ports:
-      - "5432:5432"
