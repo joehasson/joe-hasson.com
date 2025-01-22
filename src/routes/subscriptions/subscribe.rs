@@ -1,14 +1,13 @@
 use crate::{
     domain::{InvalidEmailError, SubscriberEmail},
-    email_client::EmailClient,
+    email_delivery_queue,
     flash_message::Flash,
-    util::error_chain_fmt,
+    util::{error_chain_fmt, read_env_or_panic},
 };
 use actix_session::Session;
 use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, ResponseError};
 use anyhow::Context;
 use chrono::Utc;
-use lettre::AsyncTransport;
 use log;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -153,16 +152,50 @@ async fn get_subscription_token_from_subscriber_email(
     )))
 }
 
+async fn enqueue_confirmation_email<'a, T>(
+    executor: T,
+    subscriber_email: &SubscriberEmail,
+    subscription_token: &str,
+) -> Result<(), sqlx::Error>
+where
+    T: Executor<'a, Database = Postgres>,
+{
+    let app_base_url = read_env_or_panic("APP_BASE_URL");
+
+    let confirmation_link = format!(
+        "{}/subscriptions/confirm?subscription_token={}",
+        app_base_url, subscription_token
+    );
+
+    let html_content = &format!(
+        "Thanks for signing up to my blog!
+         <br /> Click <a href=\"{}\">here</a>
+         to confirm your subscription.",
+        confirmation_link
+    );
+
+    let text_content = &format!(
+        "Thanks for signing up to my blog!\nVisit {} to confirm your subscription.",
+        confirmation_link
+    );
+
+    email_delivery_queue::push_task(
+        executor,
+        subscriber_email,
+        "Please confirm your subscription.",
+        html_content,
+        text_content,
+    )
+    .await?;
+
+    Ok(())
+}
+
 pub async fn subscribe<T>(
     form: web::Form<FormData>,
     connection_pool: web::Data<PgPool>,
-    email_client: web::Data<EmailClient<T>>,
     session: Session,
-) -> Result<HttpResponse, SubscribeError>
-where
-    T: AsyncTransport + Sync + Send,
-    T::Error: std::error::Error,
-{
+) -> Result<HttpResponse, SubscribeError> {
     let subscriber_email = SubscriberEmail::parse(form.0.email)?;
 
     let mut transaction = connection_pool
@@ -181,16 +214,16 @@ where
                 .context("Failed to insert subscription token in the database")?;
 
             log::info!("Committing transaction...");
+            log::info!("Pushing confirmation email task onto queue...");
+
+            enqueue_confirmation_email(&mut *transaction, &subscriber_email, &subscription_token)
+                .await
+                .context("Error sending confirmation")?;
+
             transaction
                 .commit()
                 .await
                 .context("Failed to commit SQL transaction to the database")?;
-
-            log::info!("Sending confirmation email...");
-            email_client
-                .send_confirmation_email(&subscription_token, subscriber_email)
-                .await
-                .context("Error sending confirmation")?;
 
             session.set_flash(
                 "Check your inbox for a confirmation email and follow the link to complete your registration."
@@ -205,10 +238,10 @@ where
                     .await?;
 
             log::info!("Resending confirmation email...");
-            email_client
-                .send_confirmation_email(&subscription_token, subscriber_email)
+
+            enqueue_confirmation_email(&**connection_pool, &subscriber_email, &subscription_token)
                 .await
-                .context("Failed to send confirmation email")?;
+                .context("Error sending confirmation")?;
 
             session
                 .set_flash("Email already registered. A new confirmation email has been sent to your inbox in case you haven't confirmed already.")

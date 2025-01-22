@@ -8,16 +8,15 @@ use lettre::transport::smtp::AsyncSmtpTransport;
 use lettre::transport::smtp::PoolConfig;
 use lettre::Tokio1Executor;
 use secrecy::{ExposeSecret, Secret};
-use shared::{email_client::EmailClient, routes, ssr::SsrCommon};
+use shared::{
+    email_delivery_worker::worker, email_delivery_worker::EmailClient, routes, ssr::SsrCommon,
+    util::read_env_or_panic,
+};
 use sqlx::{
     postgres::{PgConnectOptions, PgSslMode},
     PgPool,
 };
 use std::sync::Arc;
-
-fn read_env_or_panic(varname: &str) -> String {
-    std::env::var(varname).unwrap_or_else(|_| panic!("Failed to read env var {}", varname))
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -41,16 +40,14 @@ async fn main() -> std::io::Result<()> {
         )
         .ssl_mode(PgSslMode::Prefer);
 
-    let connection_pool = web::Data::new(
-        PgPool::connect_with(options)
-            .await
-            .expect("Failed to establish database connection"),
-    );
+    let pgpool = PgPool::connect_with(options)
+        .await
+        .expect("Failed to establish database connection");
+    let connection_pool = web::Data::new(pgpool.clone());
 
     log::info!("Setting up email client...");
     let email_address = read_env_or_panic("BLOG_EMAIL_ADDRESS");
     let email_password = Secret::new(read_env_or_panic("BLOG_EMAIL_PASSWORD"));
-    let app_base_url = read_env_or_panic("APP_BASE_URL");
     let email_creds =
         Credentials::new(email_address.clone(), email_password.expose_secret().into());
 
@@ -62,10 +59,11 @@ async fn main() -> std::io::Result<()> {
         .port(587)
         .build();
 
-    let email_client = web::Data::new(
-        EmailClient::new(Arc::new(email_transport), &email_address, app_base_url)
-            .expect("Unable to create email client"),
-    );
+    let email_client = EmailClient::new(Arc::new(email_transport), &email_address)
+        .expect("Failed to setup email client");
+
+    log::info!("Setting up email delivery background worker...");
+    let worker_task = tokio::spawn(worker(Arc::new(email_client), Arc::new(pgpool)));
 
     // Set up secret key for flash messaging middleware
     let hmac_secret = Secret::new(read_env_or_panic("APP_HMAC_SECRET"));
@@ -81,7 +79,6 @@ async fn main() -> std::io::Result<()> {
             )
             .app_data(ssr_common.clone())
             .app_data(connection_pool.clone())
-            .app_data(email_client.clone())
             .route(
                 "/health_check",
                 web::get().to(routes::health_check::health_check),
@@ -102,8 +99,14 @@ async fn main() -> std::io::Result<()> {
                     .to(routes::subscriptions::unsubscribe::<AsyncSmtpTransport<Tokio1Executor>>),
             )
     })
-    .bind(("127.0.0.1", 8001))?;
+    .bind(("127.0.0.1", 8001))?
+    .run();
 
-    log::info!("Bound to socket succesfully. Starting server...");
-    server.run().await
+    log::info!("Bound to socket succesfully. Starting server and background worker...");
+    tokio::select! {
+        _ = server => {},
+        _ = worker_task => {},
+    };
+
+    Ok(())
 }

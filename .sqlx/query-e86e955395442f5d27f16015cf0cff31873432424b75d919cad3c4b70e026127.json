@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE email_delivery_queue \n        SET \n            n_retries = n_retries + 1,\n            send_after = $1\n        WHERE id = $2\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e86e955395442f5d27f16015cf0cff31873432424b75d919cad3c4b70e026127"
+}

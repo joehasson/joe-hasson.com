@@ -17,3 +17,7 @@ pub fn error_chain_fmt(
     }
     Ok(())
 }
+
+pub fn read_env_or_panic(varname: &str) -> String {
+    std::env::var(varname).unwrap_or_else(|_| panic!("Failed to read env var {}", varname))
+}

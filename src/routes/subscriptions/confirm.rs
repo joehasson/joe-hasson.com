@@ -1,11 +1,12 @@
 use crate::{
-    domain::SubscriberEmail, email_client::EmailClient, flash_message::Flash, util::error_chain_fmt,
+    domain::SubscriberEmail, email_delivery_queue, email_template, flash_message::Flash,
+    util::error_chain_fmt,
 };
 use actix_session::Session;
 use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, ResponseError};
 use anyhow::Context;
 use lettre::AsyncTransport;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
@@ -46,7 +47,6 @@ impl ResponseError for SubscriptionConfirmError {
 pub async fn confirm<T>(
     pool: web::Data<PgPool>,
     parameters: web::Query<Parameters>,
-    email_client: web::Data<EmailClient<T>>,
     session: Session,
 ) -> Result<HttpResponse, SubscriptionConfirmError>
 where
@@ -58,24 +58,37 @@ where
         .context("Failed to look up subscriber id in subscription_tokens table")?
         .ok_or(SubscriptionConfirmError::InvalidSubscriptionToken)?;
 
-    let subscriber_email = confirm_subscriber(&pool, subscriber_id).await?;
+    let mut transaction = pool
+        .begin()
+        .await
+        .context("Failed to acquire a Postgres connection from the pool")?;
+
+    let subscriber_email = confirm_subscriber(&mut transaction, subscriber_id).await?;
+
+    email_delivery_queue::push_task(
+        &mut *transaction,
+        &subscriber_email,
+        "Welcome!",
+        &email_template::html_version(
+            subscriber_id,
+            "<p>Your subscription to my blog is now confirmed. Welcome!</p>",
+        ),
+        &email_template::text_version(
+            subscriber_id,
+            "Your subscription to my blog is now confirmed. Welcome!",
+        ),
+    )
+    .await
+    .with_context(|| String::from("Failed to send email"))?;
+
+    transaction
+        .commit()
+        .await
+        .context("Failed to commit SQL transaction to the database")?;
 
     session
         .set_flash("Your subscription is confirmed!")
         .context("Failed to set session state")?;
-
-    // TODO: enqueue send email-task with a separate
-    // service once implemented; not great to block like this
-    email_client
-        .send_email_to_subscriber(
-            subscriber_id,
-            subscriber_email,
-            "Welcome!",
-            "<p>Your subscription to my blog is now confirmed. Welcome!</p>",
-            "Your subscription to my blog is now confirmed. Welcome!",
-        )
-        .await
-        .with_context(|| String::from("Failed to send email"))?;
 
     Ok(HttpResponse::SeeOther()
         .insert_header((LOCATION, "/blog"))
@@ -98,7 +111,7 @@ async fn get_subscriber_id_from_token(
 }
 
 async fn confirm_subscriber(
-    pool: &PgPool,
+    transaction: &mut Transaction<'_, Postgres>,
     subscriber_id: Uuid,
 ) -> Result<SubscriberEmail, anyhow::Error> {
     let subscriber_email = sqlx::query!(
@@ -109,7 +122,7 @@ async fn confirm_subscriber(
         RETURNING email"#,
         subscriber_id
     )
-    .fetch_one(pool)
+    .fetch_one(&mut **transaction) // Rust :)
     .await
     .context("Failed to register subscriber confirmation in database")?
     .email;

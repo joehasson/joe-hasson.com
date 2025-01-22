@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": " DELETE FROM email_delivery_queue WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c937460d6aef83d82cf77d0f0ed25393c1f8982aeac68531bd9db65616c70911"
+}
