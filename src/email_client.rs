@@ -6,6 +6,7 @@ use lettre::AsyncTransport;
 use log;
 use std::error::Error as StdError;
 use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct EmailClient<T: AsyncTransport + Send + Sync> {
     smtp_client: Arc<T>,
@@ -78,7 +79,7 @@ where
         })
     }
 
-    pub async fn send_email(
+    async fn send_email(
         &self,
         recipient: &SubscriberEmail,
         subject: &str,
@@ -110,6 +111,47 @@ where
                 Err(EmailClientError::TransportError("Failed to send email"))
             }
         }
+    }
+
+    pub async fn send_email_to_subscriber(
+        &self,
+        subscriber_id: Uuid,
+        subscriber_email: SubscriberEmail,
+        subject: &str,
+        html_content: &str,
+        text_content: &str,
+    ) -> Result<(), EmailClientError> {
+        let unsubscribe_link = format!(
+            "{}/subscriptions/unsubscribe?id={}",
+            self.app_base_url, subscriber_id
+        );
+
+        let html_content = &format!(
+            r#"
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                {html_content}
+        
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;"/>
+        
+                <footer style="font-size: 12px; color: #666;">
+                    <p>
+                        You're receiving this because you subscribed to Joe Hasson's Blog.<br/>
+                        <a href="{unsubscribe_link}" style="color: #666;">Unsubscribe</a>
+                    </p>
+                </footer>
+            </div>"#
+        );
+
+        let text_content = &format!(
+            "{text_content}\n\n\
+            -------------------------------------------\n\
+            You're receiving this because you subscribed to Joe Hasson's Blog.\n\
+            Unsubscribe: {unsubscribe_link}\n"
+        );
+
+        self.send_email(&subscriber_email, subject, html_content, text_content)
+            .await?;
+        Ok(())
     }
 
     pub async fn send_confirmation_email(

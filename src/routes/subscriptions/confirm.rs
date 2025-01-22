@@ -1,7 +1,10 @@
-use crate::{flash_message::Flash, util::error_chain_fmt};
+use crate::{
+    domain::SubscriberEmail, email_client::EmailClient, flash_message::Flash, util::error_chain_fmt,
+};
 use actix_session::Session;
 use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, ResponseError};
 use anyhow::Context;
+use lettre::AsyncTransport;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -40,23 +43,39 @@ impl ResponseError for SubscriptionConfirmError {
     }
 }
 
-pub async fn confirm(
+pub async fn confirm<T>(
     pool: web::Data<PgPool>,
     parameters: web::Query<Parameters>,
+    email_client: web::Data<EmailClient<T>>,
     session: Session,
-) -> Result<HttpResponse, SubscriptionConfirmError> {
+) -> Result<HttpResponse, SubscriptionConfirmError>
+where
+    T: AsyncTransport + Sync + Send,
+    T::Error: std::error::Error,
+{
     let subscriber_id = get_subscriber_id_from_token(&pool, &parameters.subscription_token)
         .await
         .context("Failed to look up subscriber id in subscription_tokens table")?
         .ok_or(SubscriptionConfirmError::InvalidSubscriptionToken)?;
 
-    confirm_subscriber(&pool, subscriber_id)
-        .await
-        .context("Failed to register subscriber confirmation in database")?;
+    let subscriber_email = confirm_subscriber(&pool, subscriber_id).await?;
 
     session
         .set_flash("Your subscription is confirmed!")
         .context("Failed to set session state")?;
+
+    // TODO: enqueue send email-task with a separate
+    // service once implemented; not great to block like this
+    email_client
+        .send_email_to_subscriber(
+            subscriber_id,
+            subscriber_email,
+            "Subscription confirmed!",
+            "<p>Your subscription to my blog is now confirmed. Welcome!</p>",
+            "Your subscription to my blog is now confirmed. Welcome!",
+        )
+        .await
+        .with_context(|| String::from("Failed to send email"))?;
 
     Ok(HttpResponse::SeeOther()
         .insert_header((LOCATION, "/blog"))
@@ -78,12 +97,27 @@ async fn get_subscriber_id_from_token(
     Ok(result.map(|record| record.subscriber_id))
 }
 
-async fn confirm_subscriber(pool: &PgPool, subscriber_id: Uuid) -> Result<(), sqlx::Error> {
-    sqlx::query!(
-        r#"UPDATE subscriptions SET confirmed = true WHERE id = $1"#,
+async fn confirm_subscriber(
+    pool: &PgPool,
+    subscriber_id: Uuid,
+) -> Result<SubscriberEmail, anyhow::Error> {
+    let subscriber_email = sqlx::query!(
+        r#"
+        UPDATE subscriptions
+        SET confirmed = true 
+        WHERE id = $1
+        RETURNING email"#,
         subscriber_id
     )
-    .execute(pool)
-    .await?;
-    Ok(())
+    .fetch_one(pool)
+    .await
+    .context("Failed to register subscriber confirmation in database")?
+    .email;
+
+    SubscriberEmail::parse(subscriber_email).with_context(|| {
+        format!(
+            "Malformed email in database for subscriber_id {}",
+            subscriber_id
+        )
+    })
 }

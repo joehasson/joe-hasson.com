@@ -1,13 +1,18 @@
+use thiserror::Error;
 use validator::validate_email;
+
+#[derive(Debug, Error)]
+#[error("invalid email address provided")]
+pub struct InvalidEmailError;
 
 #[derive(Debug)]
 pub struct SubscriberEmail(String);
 impl SubscriberEmail {
-    pub fn parse(s: String) -> Result<SubscriberEmail, String> {
+    pub fn parse(s: String) -> Result<SubscriberEmail, InvalidEmailError> {
         if validate_email(&s) {
             Ok(Self(s))
         } else {
-            Err(format!("{} is not a valid email", s))
+            Err(InvalidEmailError)
         }
     }
 }

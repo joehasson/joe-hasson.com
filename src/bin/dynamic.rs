@@ -94,7 +94,12 @@ async fn main() -> std::io::Result<()> {
             )
             .route(
                 "/subscriptions/confirm",
-                web::get().to(routes::subscriptions::confirm),
+                web::get().to(routes::subscriptions::confirm::<AsyncSmtpTransport<Tokio1Executor>>),
+            )
+            .route(
+                "/subscriptions/unsubscribe",
+                web::get()
+                    .to(routes::subscriptions::unsubscribe::<AsyncSmtpTransport<Tokio1Executor>>),
             )
     })
     .bind(("127.0.0.1", 8001))?;

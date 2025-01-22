@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        WITH deleted_subscriptions AS (\n            DELETE FROM subscriptions \n            WHERE id = $1\n            RETURNING id\n        )\n        DELETE FROM subscription_tokens \n        WHERE subscriber_id IN (\n            SELECT id \n            FROM deleted_subscriptions\n        ) ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fdaa79dcef177908f9882c341920c0f6abce9369f5cc0c76f4afa07296e01c4f"
+}

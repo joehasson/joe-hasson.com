@@ -1,5 +1,8 @@
 use crate::{
-    domain::SubscriberEmail, email_client::EmailClient, flash_message::Flash, util::error_chain_fmt,
+    domain::{InvalidEmailError, SubscriberEmail},
+    email_client::EmailClient,
+    flash_message::Flash,
+    util::error_chain_fmt,
 };
 use actix_session::Session;
 use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, ResponseError};
@@ -15,7 +18,7 @@ use uuid::Uuid;
 #[derive(thiserror::Error)]
 pub enum SubscribeError {
     #[error("{0}")]
-    ValidationError(String),
+    ValidationError(#[from] InvalidEmailError),
     #[error(transparent)]
     UnexpectedError(#[from] anyhow::Error),
 }
@@ -38,14 +41,6 @@ impl ResponseError for SubscribeError {
 #[derive(serde::Deserialize)]
 pub struct FormData {
     email: String,
-}
-
-impl TryFrom<FormData> for SubscriberEmail {
-    type Error = String;
-
-    fn try_from(form: FormData) -> Result<Self, Self::Error> {
-        SubscriberEmail::parse(form.email)
-    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -168,7 +163,8 @@ where
     T: AsyncTransport + Sync + Send,
     T::Error: std::error::Error,
 {
-    let subscriber_email = form.0.try_into().map_err(SubscribeError::ValidationError)?;
+    let subscriber_email = SubscriberEmail::parse(form.0.email)?;
+
     let mut transaction = connection_pool
         .begin()
         .await
