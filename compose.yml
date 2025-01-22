@@ -1,5 +1,9 @@
 services:
   web:
+    # We use pre-built images, here and under the migrations service,
+    # rather than building from a Dockerfile, so that image builds 
+    # can run as separate, parallel steps in our deployment pipeline, 
+    # prior to running "docker compose up" on the server.
     image: joe-hasson-personal-site:latest
     ports:
       - "${APP_PORT:-80}:80"
