@@ -180,8 +180,13 @@ where
             ",
             confirmation_link
         );
-        self.send_email(&subscriber_email, "Welcome!", html_content, text_content)
-            .await?;
+        self.send_email(
+            &subscriber_email,
+            "Please confirm your subscription.",
+            html_content,
+            text_content,
+        )
+        .await?;
         Ok(())
     }
 }

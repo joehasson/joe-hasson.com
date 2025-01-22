@@ -70,7 +70,7 @@ where
         .send_email_to_subscriber(
             subscriber_id,
             subscriber_email,
-            "Subscription confirmed!",
+            "Welcome!",
             "<p>Your subscription to my blog is now confirmed. Welcome!</p>",
             "Your subscription to my blog is now confirmed. Welcome!",
         )
