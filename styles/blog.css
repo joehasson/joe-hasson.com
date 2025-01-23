@@ -89,3 +89,13 @@
     border: 1px solid #bbdefb;
     max-width: 400px;
 }
+
+.blog-post-link {
+    display: block;
+    text-decoration: none;  /* removes the underline */
+    color: inherit;
+}
+
+.blog-post-link:hover {
+    opacity: 0.9;
+}

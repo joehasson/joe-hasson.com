@@ -1,8 +1,14 @@
 use crate::{flash_message::Flash, ssr::SsrCommon, util::e500};
 use actix_session::Session;
 use actix_web::{web, HttpResponse};
+use serde::Serialize;
 use std::fs;
 
+#[derive(Serialize)]
+struct BlogPost {
+    content: String,
+    path: String, // e.g. "/blog/first-post"
+}
 pub async fn get(
     ssr: web::Data<SsrCommon>,
     session: Session,
@@ -18,10 +24,16 @@ pub async fn get(
     // Sort reverse chronological (post names prefixed by YYYY-MM-DD)
     post_titles.sort_by(|a, b| b.cmp(a));
 
-    let posts: Vec<_> = post_titles
-        .into_iter()
-        .filter_map(|post| fs::read_to_string(format!("/blog/{}", post)).ok())
-        .collect();
+    let mut posts = vec![];
+    for title in &post_titles {
+        if let Ok(content) = fs::read_to_string(format!("/blog/{}", title)) {
+            let post = BlogPost {
+                content,
+                path: format!("/blog/{}", title),
+            };
+            posts.push(post)
+        }
+    }
 
     let html = if let Some(flash_message) = session.get_flash() {
         session.clear_flash();

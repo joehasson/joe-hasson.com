@@ -21,9 +21,11 @@
 
 <div class="blog-posts">
     {% for post in posts %}
-        <article class="blog-post">
-            {{ post | safe }}
-        </article>
+        <a href="{{ post.path }}" class="blog-post-link">
+            <article class="blog-post">
+                {{ post.content | safe }}
+            </article>
+        </a>
     {% endfor %}
 </div>
 
