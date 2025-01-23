@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     std::env::set_current_dir(project_root)?;
 
     // Create build dir if it doesnt exist already
-    std::fs::create_dir_all("build/html")?;
+    std::fs::create_dir_all("build/html/blog")?;
     std::fs::create_dir_all("build/css")?;
 
     // perform CSS bundling
@@ -33,11 +33,31 @@ fn main() -> Result<()> {
     }
     std::fs::write("build/css/bundle.css", &bundled_css)?;
 
-    // Render templates for static pages
     let ssr = SsrCommon::load()?;
+
+    // Render templates for main static pages
     for fname in ["cv.html", "index.html", "portfolio.html"] {
         let rendered = ssr.render(fname)?;
         std::fs::write(format!("build/html/{}", fname), rendered)?;
+    }
+
+    // Render blog posts
+    let dir = std::fs::read_dir("blog").unwrap();
+    for entry in dir {
+        let path = entry.unwrap().path();
+        if !path.is_file() {
+            continue;
+        }
+        let post_content = std::fs::read_to_string(&path).unwrap();
+
+        let rendered = ssr
+            .clone() // TODO: SsrCommon is just not a good abstraction. Fix it!
+            .with_context("post", &post_content)
+            .render("blog_post.html")
+            .unwrap();
+
+        let fname = path.file_name().unwrap().to_str().unwrap();
+        std::fs::write(format!("build/html/blog/{}", fname), rendered)?;
     }
 
     Ok(())

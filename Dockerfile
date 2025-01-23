@@ -23,6 +23,7 @@ RUN cargo build --bin dynamic-site --release
 ## build static as well
 COPY templates/ templates/
 COPY styles/ styles/
+COPY blog/ blog/
 RUN cargo run --bin static-build --release
 
 # Set up server
@@ -31,10 +32,11 @@ FROM nginx as runtime
 ## prepare static content and rust binary
 COPY templates/ templates/
 COPY styles/ styles/
+COPY blog/ /blog
 COPY --from=builder  /usr/src/app/build /build
 COPY --from=builder /usr/src/app/target/release/dynamic-site /usr/local/bin/
 
-# prepare config and static content for nginx
+# prepare config
 COPY nginx.conf /etc/nginx/nginx.conf
 RUN rm /etc/nginx/conf.d/default.conf
 

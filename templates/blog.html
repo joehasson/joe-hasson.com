@@ -18,10 +18,13 @@
     <p class="flash-message">{{ flash }}</p>
     {% endif %}
 </div>
-<div class="blog-post">
-    <h2>First Blog Post</h2>
-    <div class="date">March 20, 2024</div>
-    <p>Content of your first blog post...</p>
+
+<div class="blog-posts">
+    {% for post in posts %}
+        <article class="blog-post">
+            {{ post | safe }}
+        </article>
+    {% endfor %}
 </div>
 
 {% endblock %}
