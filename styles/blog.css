@@ -99,3 +99,21 @@
 .blog-post-link:hover {
     opacity: 0.9;
 }
+
+.blog-post-preview {
+    max-height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Fade out effect at the bottom */
+.blog-post-preview::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(transparent, #fff);
+    pointer-events: none;
+}
