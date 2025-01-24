@@ -106,10 +106,12 @@ resource "aws_key_pair" "deployer" {
   public_key = var.ssh_public_key
 }
 
+
 resource "aws_instance" "app" {
   ami           = "ami-0b2d89eba83fd3ed9"  # Amazon Linux 2 AMI
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.public.id
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   
   vpc_security_group_ids = [aws_security_group.app.id]
   

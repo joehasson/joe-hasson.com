@@ -72,61 +72,41 @@ jobs:
         run: |
           echo "EC2_IP=$(terraform output -json | jq -r '.public_ip.value')" >> $GITHUB_OUTPUT
 
-  build-app-container-image:
+  build-and-push-image:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - name: migrations
+            file: Dockerfile.migrations
+          - name: web
+            file: Dockerfile
     steps:
       - uses: actions/checkout@v3
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set up docker buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build app docker image
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: .
-          tags: joe-hasson-personal-site
+          file: ${{ matrix.image.file }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.image.name }}:latest
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Archive and compress images ahead of SCP
-        run: >
-          docker save joe-hasson-personal-site | gzip > app-image.tar.gz
-
-      - name: Upload app image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: app-image.tar.gz
-
-  build-migration-container-image:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up docker buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build migration docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.migrations
-          tags: joe-hasson-personal-site-migrations
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Archive and compress images ahead of SCP
-        run: >
-          docker save joe-hasson-personal-site-migrations | gzip > migrations-image.tar.gz
-
-      - name: Upload migrations image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: migrations-image.tar.gz
-
 
   prepare-server:
     needs: infrastructure
@@ -172,34 +152,10 @@ jobs:
           target: /home/ec2-user
 
   release:
-    needs: [lint-and-typecheck-and-test, infrastructure, prepare-server, build-app-container-image, build-migration-container-image]
+    needs: [lint-and-typecheck-and-test, infrastructure, prepare-server, build-and-push-image]
     runs-on: ubuntu-latest
     steps:
-      - name: Download image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image
-          path: .
-
-      - name: SCP app docker image to server
-        uses: appleboy/scp-action@master
-        with:
-          username: ec2-user
-          host: ${{ needs.infrastructure.outputs.ec2_ip }}
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: "app-image.tar.gz"
-          target: /tmp
-
-      - name: SCP migrations docker image to server
-        uses: appleboy/scp-action@master
-        with:
-          username: ec2-user
-          host: ${{ needs.infrastructure.outputs.ec2_ip }}
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: "migrations-image.tar.gz"
-          target: /tmp
-
-      - name: run application on server using docker compose
+      - name: Pull docker images and run application on server using docker compose
         uses: appleboy/ssh-action@v1.0.0
         env:
           REPO: ${{ github.repository }}
@@ -247,9 +203,14 @@ jobs:
             echo "What docker compose sees:"
             docker compose config
 
-            # load images and run containers
-            docker load -i /tmp/app-image.tar.gz
-            docker load -i /tmp/migrations-image.tar.gz
+            # Authenticate docker with ECR
+            export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+            aws ecr get-login-password --region eu-west-2 \
+            | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com
+
+            # pull images and run containers
+            docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest
+            docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/migrations:latest
             docker compose up -d --wait web db
             docker compose up migrations
             
