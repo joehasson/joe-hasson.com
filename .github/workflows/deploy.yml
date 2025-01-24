@@ -210,9 +210,14 @@ jobs:
             aws ecr get-login-password --region eu-west-2 \
             | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com
 
-            # pull images and run containers
+            # pull images and tag with local name
             docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest
+            docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest web:latest
+
             docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/migrations:latest
+            docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest migrations:latest
+
+            # Spin up the app
             docker compose up -d --wait web db
             docker compose up migrations
             
