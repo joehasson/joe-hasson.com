@@ -22,11 +22,8 @@ jobs:
       - name: Run clippy
         run: SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings
       
-      - name: cargo check
-        run: SQLX_OFFLINE=true cargo check
-
       - name: cargo test
-        run: cargo test
+        run: SQLX_OFFLINE=true cargo test
 
   infrastructure:
     runs-on: ubuntu-latest
