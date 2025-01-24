@@ -1,5 +1,6 @@
 /* Blog posts */
 .blog-post {
+    display: grid;
     background: #fff;
     padding: 30px;
     margin-bottom: 20px;
