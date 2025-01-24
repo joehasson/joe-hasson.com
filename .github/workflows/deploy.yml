@@ -104,7 +104,7 @@ jobs:
           context: .
           file: ${{ matrix.image.file }}
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.image.name }}:latest
-          load: true
+          push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -187,6 +187,8 @@ jobs:
             BLOG_EMAIL_ADDRESS,
             BLOG_EMAIL_PASSWORD
           script: |
+            set -eo pipefail
+
             # Export environment variables
             export DB_NAME=${DB_NAME}
             export DB_PORT=${DB_PORT}
