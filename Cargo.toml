@@ -11,6 +11,10 @@ name = "static-build"
 path = "src/bin/dynamic.rs"
 name = "dynamic-site"
 
+[[bin]]
+path = "src/bin/blog_post_dispatcher.rs"
+name = "blog-post-dispatcher"
+
 [lib]
 path = "src/lib.rs"
 name = "shared"

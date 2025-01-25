@@ -9,7 +9,7 @@ fn unsubscribe_link(subscriber_id: Uuid) -> String {
     )
 }
 
-pub fn html_version(subscriber_id: Uuid, html_content: &str) -> String {
+pub fn html(subscriber_id: Uuid, html_content: &str) -> String {
     let link = unsubscribe_link(subscriber_id);
     format!(
         r#"
@@ -28,7 +28,7 @@ pub fn html_version(subscriber_id: Uuid, html_content: &str) -> String {
     )
 }
 
-pub fn text_version(subscriber_id: Uuid, text_content: &str) -> String {
+pub fn text(subscriber_id: Uuid, text_content: &str) -> String {
     let link = unsubscribe_link(subscriber_id);
     format!(
         "{text_content}\n\n\

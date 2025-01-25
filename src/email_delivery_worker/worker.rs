@@ -1,7 +1,10 @@
 use crate::{
     domain::{InvalidEmailError, SubscriberEmail},
-    email_delivery_queue::{self, deprioritise_task},
-    email_delivery_worker::email_client::{EmailClient, EmailClientError},
+    email_delivery_queue,
+    email_delivery_worker::{
+        email_client::{EmailClient, EmailClientError},
+        email_template
+    }
 };
 use lettre::AsyncTransport;
 use sqlx::PgPool;
@@ -64,13 +67,13 @@ where
         .await?
         .ok_or(TryTaskError::NoPendingTask)?;
 
-    let recipient = match SubscriberEmail::parse(task.recipient) {
+    let recipient = match SubscriberEmail::parse(task.email) {
         Ok(r) => r,
         // TODO: if email is unparseable, immediately move task to dead
         // letter queue once implemented instead of retrying + backing off
         // like we do here
         Err(e) => {
-            deprioritise_task(&mut *transaction, task.id, task.n_retries).await?;
+            email_delivery_queue::deprioritise_task(&mut *transaction, task.id, task.n_retries).await?;
             transaction.commit().await?;
             return Err(TryTaskError::CorruptedData(e));
         }
@@ -80,12 +83,12 @@ where
         .send_email(
             &recipient,
             &task.subject,
-            &task.email_html,
-            &task.email_text,
+            &email_template::html(task.subscriber_id, &task.email_html),
+            &email_template::text(task.subscriber_id, &task.email_text),
         )
         .await
     {
-        deprioritise_task(&mut *transaction, task.id, task.n_retries).await?;
+        email_delivery_queue::deprioritise_task(&mut *transaction, task.id, task.n_retries).await?;
         transaction.commit().await?;
         return Err(TryTaskError::EmailClientError(e));
     }

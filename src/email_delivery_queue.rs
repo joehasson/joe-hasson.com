@@ -1,4 +1,3 @@
-use crate::domain::SubscriberEmail;
 use chrono::{DateTime, Utc};
 use sqlx::{Executor, FromRow, Postgres};
 use uuid::Uuid;
@@ -6,7 +5,8 @@ use uuid::Uuid;
 #[derive(FromRow)]
 pub struct EmailDeliveryTask {
     pub id: Uuid,
-    pub recipient: String,
+    pub subscriber_id: Uuid,
+    pub email: String,
     pub subject: String,
     pub email_html: String,
     pub email_text: String,
@@ -17,7 +17,7 @@ pub struct EmailDeliveryTask {
 
 pub async fn push_task<'a, T>(
     executor: T,
-    recipient: &SubscriberEmail,
+    subscriber_id: Uuid,
     subject: &str,
     html_content: &str,
     text_content: &str,
@@ -29,11 +29,11 @@ where
     let query = sqlx::query!(
         r#"
         INSERT INTO email_delivery_queue
-            (id, recipient, subject, email_html, email_text)
+            (id, subscriber_id, subject, email_html, email_text)
         VALUES ($1, $2, $3, $4, $5)
         "#,
         id,
-        recipient.as_ref(),
+        subscriber_id,
         subject,
         html_content,
         text_content
@@ -48,9 +48,10 @@ where
 {
     sqlx::query_as::<_, EmailDeliveryTask>(
         r#"
-        SELECT *
-        FROM email_delivery_queue
-        FOR UPDATE
+        SELECT email_delivery_queue.*, subscriptions.email
+        FROM email_delivery_queue JOIN subscriptions
+        ON email_delivery_queue.subscriber_id = subscriptions.id
+        FOR UPDATE of email_delivery_queue
         SKIP LOCKED
         LIMIT 1
         "#, // FOR UPDATE locks the rows

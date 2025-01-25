@@ -1,7 +1,8 @@
 -- Add migration script here
 CREATE TABLE email_delivery_queue (
    id uuid PRIMARY KEY NOT NULL,
-   recipient TEXT NOT NULL,
+   subscriber_id uuid NOT NULL
+   REFERENCES subscriptions (id),
    subject TEXT NOT NULL,
    email_html TEXT NOT NULL,
    email_text TEXT NOT NULL,

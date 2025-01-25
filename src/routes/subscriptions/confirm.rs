@@ -1,5 +1,5 @@
 use crate::{
-    domain::SubscriberEmail, email_delivery_queue, email_template, flash_message::Flash,
+    email_delivery_queue, flash_message::Flash,
     util::error_chain_fmt,
 };
 use actix_session::Session;
@@ -63,20 +63,14 @@ where
         .await
         .context("Failed to acquire a Postgres connection from the pool")?;
 
-    let subscriber_email = confirm_subscriber(&mut transaction, subscriber_id).await?;
+    confirm_subscriber(&mut transaction, subscriber_id).await?;
 
     email_delivery_queue::push_task(
         &mut *transaction,
-        &subscriber_email,
+        subscriber_id,
         "Welcome!",
-        &email_template::html_version(
-            subscriber_id,
-            "<p>Your subscription to my blog is now confirmed. Welcome!</p>",
-        ),
-        &email_template::text_version(
-            subscriber_id,
-            "Your subscription to my blog is now confirmed. Welcome!",
-        ),
+        "<p>Your subscription to my blog is now confirmed. Welcome!</p>",
+        "Your subscription to my blog is now confirmed. Welcome!"
     )
     .await
     .with_context(|| String::from("Failed to send email"))?;
@@ -113,24 +107,17 @@ async fn get_subscriber_id_from_token(
 async fn confirm_subscriber(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber_id: Uuid,
-) -> Result<SubscriberEmail, anyhow::Error> {
-    let subscriber_email = sqlx::query!(
+) -> Result<(), anyhow::Error> {
+    sqlx::query!(
         r#"
         UPDATE subscriptions
         SET confirmed = true 
-        WHERE id = $1
-        RETURNING email"#,
+        WHERE id = $1"#,
         subscriber_id
     )
     .fetch_one(&mut **transaction) // Rust :)
     .await
-    .context("Failed to register subscriber confirmation in database")?
-    .email;
+    .context("Failed to register subscriber confirmation in database")?;
 
-    SubscriberEmail::parse(subscriber_email).with_context(|| {
-        format!(
-            "Malformed email in database for subscriber_id {}",
-            subscriber_id
-        )
-    })
+    Ok(())
 }

@@ -218,8 +218,7 @@ jobs:
             docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest migrations:latest
 
             # Spin up the app
-            docker compose up -d --wait web db
-            docker compose up migrations
+            docker compose up
             
       - name: Purge Cloudflare Cache
         run: |

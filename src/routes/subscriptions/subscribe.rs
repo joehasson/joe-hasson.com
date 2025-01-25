@@ -130,13 +130,19 @@ fn generate_subscription_token() -> String {
         .collect()
 }
 
-async fn get_subscription_token_from_subscriber_email(
+struct SubscriptionTokenRecord {
+    subscription_token: String,
+    subscriber_id: Uuid
+}
+
+async fn get_subscription_token_details_from_subscriber_email(
     connection_pool: &PgPool,
     subscriber_email: &SubscriberEmail,
-) -> Result<String, anyhow::Error> {
-    sqlx::query!(
+) -> Result<SubscriptionTokenRecord, anyhow::Error> {
+    sqlx::query_as!(
+        SubscriptionTokenRecord,
         r#"
-        SELECT subscription_token
+        SELECT subscription_tokens.*
         FROM subscriptions JOIN subscription_tokens
         ON subscriptions.id = subscription_tokens.subscriber_id
         WHERE subscriptions.email = $1
@@ -145,7 +151,6 @@ async fn get_subscription_token_from_subscriber_email(
     )
     .fetch_optional(connection_pool)
     .await?
-    .map(|record| record.subscription_token)
     .ok_or(anyhow::anyhow!(format!(
         "Unable to find subscription token for email {}",
         subscriber_email
@@ -154,7 +159,7 @@ async fn get_subscription_token_from_subscriber_email(
 
 async fn enqueue_confirmation_email<'a, T>(
     executor: T,
-    subscriber_email: &SubscriberEmail,
+    subscriber_id: Uuid,
     subscription_token: &str,
 ) -> Result<(), sqlx::Error>
 where
@@ -181,7 +186,7 @@ where
 
     email_delivery_queue::push_task(
         executor,
-        subscriber_email,
+        subscriber_id,
         "Please confirm your subscription.",
         html_content,
         text_content,
@@ -216,7 +221,7 @@ pub async fn subscribe<T>(
             log::info!("Committing transaction...");
             log::info!("Pushing confirmation email task onto queue...");
 
-            enqueue_confirmation_email(&mut *transaction, &subscriber_email, &subscription_token)
+            enqueue_confirmation_email(&mut *transaction, subscriber_id, &subscription_token)
                 .await
                 .context("Error sending confirmation")?;
 
@@ -233,13 +238,17 @@ pub async fn subscribe<T>(
         Err(InsertSubscriberError::DuplicateEmail) => {
             log::info!("Duplicate email! Rolling back...");
             transaction.rollback().await.context("Transaction failed")?;
-            let subscription_token =
-                get_subscription_token_from_subscriber_email(&connection_pool, &subscriber_email)
+            let subscription_token_record =
+                get_subscription_token_details_from_subscriber_email(&connection_pool, &subscriber_email)
                     .await?;
 
             log::info!("Resending confirmation email...");
 
-            enqueue_confirmation_email(&**connection_pool, &subscriber_email, &subscription_token)
+            enqueue_confirmation_email(
+                &**connection_pool,
+                subscription_token_record.subscriber_id,
+                &subscription_token_record.subscription_token
+            )
                 .await
                 .context("Error sending confirmation")?;
 

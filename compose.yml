@@ -19,8 +19,8 @@ services:
       - BLOG_EMAIL_ADDRESS=${BLOG_EMAIL_ADDRESS}
       - BLOG_EMAIL_PASSWORD=${BLOG_EMAIL_PASSWORD}
     depends_on:
-      db:
-        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
 
   migrations:
     image: migrations:latest
