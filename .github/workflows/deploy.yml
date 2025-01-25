@@ -215,7 +215,7 @@ jobs:
             docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest web:latest
 
             docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/migrations:latest
-            docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest migrations:latest
+            docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/migrations:latest migrations:latest
 
             # Spin up the app
             docker compose up
