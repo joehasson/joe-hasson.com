@@ -45,11 +45,17 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to establish database connection");
     let mut transaction = conn.begin().await
         .expect("Failed to begin transaction");
+    let app_base_url = read_env_or_panic("APP_BASE_URL");
 
     for file in new_files {
+        let path = app_base_url
+            .strip_suffix(".html")
+            .expect("Blog entries should have .html extension");
+        let link = format!("{}{}", app_base_url, path);
+
         let subject = "New blog post";
-        let email_html = format!("<p>New blog post! {}</p>", file);
-        let email_text = format!("New blog post! {}", file);
+        let email_html = format!("<p>New blog post! Click <a href={}>here</a> to view.p>", link);
+        let email_text = format!("New blog post! Available at {}.", link);
         let query = sqlx::query!(
             r#"
             INSERT INTO email_delivery_queue
