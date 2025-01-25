@@ -132,7 +132,7 @@ fn generate_subscription_token() -> String {
 
 struct SubscriptionTokenRecord {
     subscription_token: String,
-    subscriber_id: Uuid
+    subscriber_id: Uuid,
 }
 
 async fn get_subscription_token_details_from_subscriber_email(
@@ -238,19 +238,21 @@ pub async fn subscribe<T>(
         Err(InsertSubscriberError::DuplicateEmail) => {
             log::info!("Duplicate email! Rolling back...");
             transaction.rollback().await.context("Transaction failed")?;
-            let subscription_token_record =
-                get_subscription_token_details_from_subscriber_email(&connection_pool, &subscriber_email)
-                    .await?;
+            let subscription_token_record = get_subscription_token_details_from_subscriber_email(
+                &connection_pool,
+                &subscriber_email,
+            )
+            .await?;
 
             log::info!("Resending confirmation email...");
 
             enqueue_confirmation_email(
                 &**connection_pool,
                 subscription_token_record.subscriber_id,
-                &subscription_token_record.subscription_token
+                &subscription_token_record.subscription_token,
             )
-                .await
-                .context("Error sending confirmation")?;
+            .await
+            .context("Error sending confirmation")?;
 
             session
                 .set_flash("Email already registered. A new confirmation email has been sent to your inbox in case you haven't confirmed already.")

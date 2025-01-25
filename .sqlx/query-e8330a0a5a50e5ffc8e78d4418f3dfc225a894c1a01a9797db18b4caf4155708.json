@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": " INSERT INTO blog_posts (slug) VALUES ($1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e8330a0a5a50e5ffc8e78d4418f3dfc225a894c1a01a9797db18b4caf4155708"
+}

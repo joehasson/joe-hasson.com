@@ -3,8 +3,8 @@ use crate::{
     email_delivery_queue,
     email_delivery_worker::{
         email_client::{EmailClient, EmailClientError},
-        email_template
-    }
+        email_template,
+    },
 };
 use lettre::AsyncTransport;
 use sqlx::PgPool;
@@ -73,7 +73,8 @@ where
         // letter queue once implemented instead of retrying + backing off
         // like we do here
         Err(e) => {
-            email_delivery_queue::deprioritise_task(&mut *transaction, task.id, task.n_retries).await?;
+            email_delivery_queue::deprioritise_task(&mut *transaction, task.id, task.n_retries)
+                .await?;
             transaction.commit().await?;
             return Err(TryTaskError::CorruptedData(e));
         }

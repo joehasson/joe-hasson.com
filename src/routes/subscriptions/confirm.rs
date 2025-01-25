@@ -1,7 +1,4 @@
-use crate::{
-    email_delivery_queue, flash_message::Flash,
-    util::error_chain_fmt,
-};
+use crate::{email_delivery_queue, flash_message::Flash, util::error_chain_fmt};
 use actix_session::Session;
 use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, ResponseError};
 use anyhow::Context;
@@ -70,7 +67,7 @@ where
         subscriber_id,
         "Welcome!",
         "<p>Your subscription to my blog is now confirmed. Welcome!</p>",
-        "Your subscription to my blog is now confirmed. Welcome!"
+        "Your subscription to my blog is now confirmed. Welcome!",
     )
     .await
     .with_context(|| String::from("Failed to send email"))?;
