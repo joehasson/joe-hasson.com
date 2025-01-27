@@ -112,7 +112,7 @@ async fn confirm_subscriber(
         WHERE id = $1"#,
         subscriber_id
     )
-    .fetch_one(&mut **transaction) // Rust :)
+    .execute(&mut **transaction) // Rust :)
     .await
     .context("Failed to register subscriber confirmation in database")?;
 
