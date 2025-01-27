@@ -34,6 +34,7 @@ pub struct Parameters {
     id: Uuid,
 }
 
+#[tracing::instrument(skip_all)]
 async fn remove_subscriber(
     connection_pool: &PgPool,
     subscriber_id: Uuid,

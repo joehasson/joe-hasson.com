@@ -4,7 +4,7 @@ use actix_web::{web, HttpResponse};
 use serde::Serialize;
 use std::fs;
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct BlogPost {
     content: String,
     path: String, // e.g. "/blog/first-post"
@@ -13,7 +13,7 @@ pub async fn get(
     ssr: web::Data<SsrCommon>,
     session: Session,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let mut post_titles: Vec<String> = fs::read_dir("/blog")?
+    let mut post_titles: Vec<String> = fs::read_dir("blog")?
         .filter_map(|e| {
             e.ok()
                 .map(|dir_entry| dir_entry.file_name())
@@ -26,7 +26,7 @@ pub async fn get(
 
     let mut posts = vec![];
     for title in &post_titles {
-        if let Ok(content) = fs::read_to_string(format!("/blog/{}", title)) {
+        if let Ok(content) = fs::read_to_string(format!("blog/{}", title)) {
             let post = BlogPost {
                 content,
                 path: format!("/blog/{}", title),

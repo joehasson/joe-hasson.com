@@ -4,6 +4,7 @@ use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, Res
 use anyhow::Context;
 use lettre::AsyncTransport;
 use sqlx::{PgPool, Postgres, Transaction};
+use tracing;
 use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
@@ -86,6 +87,7 @@ where
         .finish())
 }
 
+#[tracing::instrument(skip_all)]
 async fn get_subscriber_id_from_token(
     pool: &PgPool,
     token: &str,
@@ -101,6 +103,7 @@ async fn get_subscriber_id_from_token(
     Ok(result.map(|record| record.subscriber_id))
 }
 
+#[tracing::instrument(skip_all)]
 async fn confirm_subscriber(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber_id: Uuid,

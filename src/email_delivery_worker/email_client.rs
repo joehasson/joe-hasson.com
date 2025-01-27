@@ -3,9 +3,9 @@ use crate::util::error_chain_fmt;
 use lettre::message::Mailbox;
 use lettre::message::{Message, MultiPart};
 use lettre::AsyncTransport;
-use log;
 use std::error::Error as StdError;
 use std::sync::Arc;
+use tracing_log::log;
 
 pub struct EmailClient<T: AsyncTransport + Send + Sync> {
     smtp_client: Arc<T>,

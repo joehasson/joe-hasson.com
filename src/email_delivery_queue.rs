@@ -15,6 +15,7 @@ pub struct EmailDeliveryTask {
     pub send_after: DateTime<Utc>,
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn push_task<'a, T>(
     executor: T,
     subscriber_id: Uuid,
@@ -42,6 +43,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn peek_task<'a, T>(executor: T) -> Result<Option<EmailDeliveryTask>, sqlx::Error>
 where
     T: Executor<'a, Database = Postgres>,
@@ -60,6 +62,7 @@ where
     .await
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn pop_task<'a, T>(executor: T, task_id: Uuid) -> Result<(), sqlx::Error>
 where
     T: Executor<'a, Database = Postgres>,
@@ -73,6 +76,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn deprioritise_task<'a, T>(
     executor: T,
     task_id: Uuid,

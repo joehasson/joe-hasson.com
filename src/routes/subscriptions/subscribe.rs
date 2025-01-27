@@ -8,10 +8,10 @@ use actix_session::Session;
 use actix_web::{http::header::LOCATION, http::StatusCode, web, HttpResponse, ResponseError};
 use anyhow::Context;
 use chrono::Utc;
-use log;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use sqlx::{Executor, PgPool, Postgres, Transaction};
+use tracing_log::log;
 use uuid::Uuid;
 
 #[derive(thiserror::Error)]
@@ -50,7 +50,8 @@ pub enum InsertSubscriberError {
     DatabaseError(#[from] sqlx::Error),
 }
 
-pub async fn insert_subscriber(
+#[tracing::instrument(skip_all)]
+async fn insert_subscriber(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber: &SubscriberEmail,
 ) -> Result<Uuid, InsertSubscriberError> {
@@ -103,6 +104,7 @@ impl std::error::Error for StoreTokenError {
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn store_token(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber_id: Uuid,
@@ -135,6 +137,7 @@ struct SubscriptionTokenRecord {
     subscriber_id: Uuid,
 }
 
+#[tracing::instrument(skip_all)]
 async fn get_subscription_token_details_from_subscriber_email(
     connection_pool: &PgPool,
     subscriber_email: &SubscriberEmail,

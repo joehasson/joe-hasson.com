@@ -17,6 +17,7 @@ use sqlx::{
     PgPool,
 };
 use std::sync::Arc;
+use tracing_log::log;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

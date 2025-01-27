@@ -10,6 +10,7 @@ use lettre::AsyncTransport;
 use sqlx::PgPool;
 use std::sync::Arc;
 use std::time::Duration;
+use tracing_log::log;
 
 pub async fn worker<T>(email_client: Arc<EmailClient<T>>, connection_pool: Arc<PgPool>)
 where
