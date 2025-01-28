@@ -1,6 +1,6 @@
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
-use actix_web::{cookie::Key, middleware::Logger, web, App, HttpServer};
+use actix_web::{cookie::Key, web, App, HttpServer};
 use core::time::Duration;
 use dotenvy::dotenv;
 use lettre::transport::smtp::authentication::Credentials;
@@ -17,6 +17,7 @@ use sqlx::{
     PgPool,
 };
 use std::sync::Arc;
+use tracing_actix_web::TracingLogger;
 use tracing_log::log;
 
 #[actix_web::main]
@@ -73,7 +74,7 @@ async fn main() -> std::io::Result<()> {
     log::info!("Setting up server...");
     let server = HttpServer::new(move || {
         App::new()
-            .wrap(Logger::default())
+            .wrap(TracingLogger::default())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .build(),
