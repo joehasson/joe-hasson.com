@@ -3,7 +3,7 @@ name: Test and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ '**' ]
   pull_request:
     branches: [ main ]
 
@@ -27,6 +27,7 @@ jobs:
 
   infrastructure:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     outputs:
       ec2_ip: ${{ steps.ec2_ip.outputs.EC2_IP }}
     steps:
@@ -74,6 +75,7 @@ jobs:
 
   build-and-push-image:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       matrix:
         image:
@@ -116,6 +118,7 @@ jobs:
   prepare-server:
     needs: infrastructure
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
 
@@ -226,6 +229,7 @@ jobs:
   release:
     needs: [lint-and-typecheck-and-test, infrastructure, prepare-server, build-and-push-image]
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Pull docker images and run application on server using docker compose
         uses: appleboy/ssh-action@v1.0.0
