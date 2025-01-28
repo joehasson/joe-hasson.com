@@ -2,8 +2,8 @@ FROM rust:1.84 as migrations
 
 RUN cargo install sqlx-cli
 COPY migrations migrations
-COPY start.sh start.sh
-RUN chmod +x start.sh
+COPY try_migrate.sh try_migrate.sh
+RUN chmod +x try_migrate.sh
 
-CMD ["./start.sh"]
+CMD ["./try_migrate.sh"]
 
