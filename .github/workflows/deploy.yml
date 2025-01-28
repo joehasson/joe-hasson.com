@@ -179,7 +179,7 @@ jobs:
 
             set -eo pipefail
 
-            DEVICE="/dev/xvdf"
+            DEVICE="/dev/nvme1n1"
             MOUNT_POINT="/mnt/postgres-data"
             
             # Check if volume is already mounted
@@ -210,6 +210,13 @@ jobs:
             
             # Mount the volume
             mount $DEVICE $MOUNT_POINT
+
+            
+            # Verify mount has been created
+            df -h | grep $MOUNT_POINT || {
+                echo "Error: Mount not showing in filesystem"
+                exit 1
+            }
             
             # Set permissions for postgres user
             chown -R 999:999 $MOUNT_POINT  # 999 is the postgres user in the Docker container

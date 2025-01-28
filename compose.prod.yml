@@ -2,4 +2,4 @@
 services:
   db:
     volumes:
-      - /mnt/postgres-data:/var/lib/postgresql/data:nocopy
+      - /mnt/postgres-data:/var/lib/postgresql/data
