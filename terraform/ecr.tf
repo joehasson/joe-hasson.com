@@ -32,7 +32,7 @@ locals {
 }
 
 resource "aws_ecr_repository" "repositories" {
-  for_each = toset(["web", "migrations"])
+  for_each = toset(["backend", "reverse-proxy", "blog-post-dispatcher", "migrations"])
 
   name                 = each.key
   image_tag_mutability = "MUTABLE"

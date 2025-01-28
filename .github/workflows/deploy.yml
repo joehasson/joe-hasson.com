@@ -79,7 +79,11 @@ jobs:
         image:
           - name: migrations
             file: Dockerfile.migrations
-          - name: web
+          - name: backend
+            file: Dockerfile
+          - name: blog-post-dispatcher
+            file: Dockerfile
+          - name: reverse-proxy
             file: Dockerfile
     steps:
       - uses: actions/checkout@v3
@@ -104,6 +108,7 @@ jobs:
           context: .
           file: ${{ matrix.image.file }}
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.image.name }}:latest
+          target: ${{ matrix.image.name }} 
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -211,14 +216,20 @@ jobs:
             | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com
 
             # pull images and tag with local name
-            docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest
-            docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/web:latest web:latest
+            docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/backend:latest
+            docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/backend:latest backend:latest
+
+            docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/blog-post-dispatcher:latest
+            docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/blog-post-dispatcher:latest blog-post-dispatcher:latest
+
+            docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/reverse-proxy:latest
+            docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/reverse-proxy:latest reverse-proxy:latest
 
             docker pull $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/migrations:latest
             docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/migrations:latest migrations:latest
 
             # Spin up the app
-            docker compose up
+            docker compose up -d --wait
             
       - name: Purge Cloudflare Cache
         run: |

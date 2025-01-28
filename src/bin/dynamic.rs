@@ -100,7 +100,7 @@ async fn main() -> std::io::Result<()> {
                     .to(routes::subscriptions::unsubscribe::<AsyncSmtpTransport<Tokio1Executor>>),
             )
     })
-    .bind(("127.0.0.1", 8001))?
+    .bind(("0.0.0.0", 8001))?
     .run();
 
     log::info!("Bound to socket succesfully. Starting server and background worker...");
