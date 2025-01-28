@@ -78,6 +78,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
+      # over-ridden in compose.prod.yml to use EBS mount
       - postgres_data:/var/lib/postgresql/data
 
 volumes:

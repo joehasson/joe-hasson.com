@@ -1,0 +1,5 @@
+# ensure postgres is using EBS mount for storage in production
+services:
+  db:
+    volumes:
+      - /mnt/postgres-data:/var/lib/postgresql/data:nocopy

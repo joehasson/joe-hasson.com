@@ -146,7 +146,6 @@ jobs:
             curl -SL https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
             chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
 
-
       - name: SCP compose.yml onto server
         uses: appleboy/scp-action@master
         with:
@@ -155,6 +154,67 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: "compose.yml"
           target: /home/ec2-user
+
+      - name: SCP compose.prod.yml onto server
+        uses: appleboy/scp-action@master
+        with:
+          username: ec2-user
+          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "compose.prod.yml"
+          target: /home/ec2-user
+
+      - name: Mount EBS volume to /mnt/postgres-data
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          REPO: ${{ github.repository }}
+        with:
+          username: ec2-user
+          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            # Thanks Claude
+            # Exit and re-run as root if not running as root already
+            [ "$UID" -eq 0 ] || exec sudo "$0" "$@"
+
+            set -eo pipefail
+
+            DEVICE="/dev/xvdf"
+            MOUNT_POINT="/mnt/postgres-data"
+            
+            # Check if volume is already mounted
+            if mount | grep -q $MOUNT_POINT; then
+                echo "$MOUNT_POINT is already mounted"
+                exit 0
+            fi
+            
+            # Check if device exists
+            if [ ! -b "$DEVICE" ]; then
+                echo "Device $DEVICE does not exist"
+                exit 1
+            fi
+            
+            # Check if volume needs formatting
+            if [ "$(file -s $DEVICE)" = "$DEVICE: data" ]; then
+                echo "Volume is unformatted. Formatting with ext4..."
+                mkfs -t ext4 $DEVICE
+            fi
+            
+            # Create mount point if it doesn't exist
+            mkdir -p $MOUNT_POINT
+            
+            # Add to fstab if not already there
+            if ! grep -q "$DEVICE" /etc/fstab; then
+                echo "$DEVICE $MOUNT_POINT ext4 defaults,nofail 0 2" >> /etc/fstab
+            fi
+            
+            # Mount the volume
+            mount $DEVICE $MOUNT_POINT
+            
+            # Set permissions for postgres user
+            chown -R 999:999 $MOUNT_POINT  # 999 is the postgres user in the Docker container
+            
+            echo "Volume mounted successfully at $MOUNT_POINT"
 
   release:
     needs: [lint-and-typecheck-and-test, infrastructure, prepare-server, build-and-push-image]
@@ -229,7 +289,7 @@ jobs:
             docker tag $AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/migrations:latest migrations:latest
 
             # Spin up the app
-            docker compose up -d --wait
+            docker compose -f compose.yml -f compose.prod.yml up -d --wait
             
       - name: Purge Cloudflare Cache
         run: |
