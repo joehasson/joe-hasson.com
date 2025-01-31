@@ -25,3 +25,8 @@ variable "cloudflare_zone_id" {
     sensitive = true
 }
 
+variable "deploy_machine_ip" {
+    description = "IP address of machine used to run deployment"
+    type        = string
+}
+

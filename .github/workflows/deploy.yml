@@ -25,54 +25,6 @@ jobs:
       - name: cargo test
         run: SQLX_OFFLINE=true cargo test
 
-  infrastructure:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    outputs:
-      ec2_ip: ${{ steps.ec2_ip.outputs.EC2_IP }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9.8"
-
-      - name: Terraform Init
-        working-directory: ./terraform
-        run: terraform init
-        
-      - name: Terraform Plan
-        working-directory: ./terraform
-        run: >
-          terraform plan
-          -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"
-          -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"
-          -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
-
-      - name: Terraform Apply
-        working-directory: ./terraform
-        if: github.ref == 'refs/heads/main'
-        run: >
-          terraform apply -auto-approve
-          -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"
-          -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"
-          -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
-        
-      # Store IP for use in later jobs
-      - name: Get EC2 IP
-        id: ec2_ip
-        working-directory: ./terraform
-        run: |
-          echo "EC2_IP=$(terraform output -json | jq -r '.public_ip.value')" >> $GITHUB_OUTPUT
-
   build-and-push-image:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -115,12 +67,55 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  prepare-server:
-    needs: infrastructure
+  release:
+    needs: [lint-and-typecheck-and-test, build-and-push-image]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+        
+      - name: Terraform Plan
+        working-directory: ./terraform
+        run: >
+          terraform plan
+          -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"
+          -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          -var="deploy_machine_ip=$(curl -s https://api.ipify.org)"
+
+      - name: Terraform Apply
+        working-directory: ./terraform
+        if: github.ref == 'refs/heads/main'
+        run: >
+          terraform apply -auto-approve
+          -var="ssh_public_key=${{ secrets.EC2_SSH_PUBLIC_KEY }}"
+          -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          -var="deploy_machine_ip=$(curl -s https://api.ipify.org)"
+        
+      # Store EC2 IP for use in later steps
+      - name: Get EC2 IP
+        working-directory: ./terraform
+        run: |
+          EC2_IP="$(terraform output -json | jq -r '.public_ip.value')"
+          echo "EC2_IP=$EC2_IP" >> $GITHUB_ENV
+
 
       - name: Install docker and docker compose on server
         uses: appleboy/ssh-action@v1.0.0
@@ -128,7 +123,7 @@ jobs:
           REPO: ${{ github.repository }}
         with:
           username: ec2-user
-          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             set -e
@@ -153,7 +148,7 @@ jobs:
         uses: appleboy/scp-action@master
         with:
           username: ec2-user
-          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: "compose.yml"
           target: /home/ec2-user
@@ -162,7 +157,7 @@ jobs:
         uses: appleboy/scp-action@master
         with:
           username: ec2-user
-          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: "compose.prod.yml"
           target: /home/ec2-user
@@ -173,7 +168,7 @@ jobs:
           REPO: ${{ github.repository }}
         with:
           username: ec2-user
-          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             # Thanks Claude
@@ -226,11 +221,6 @@ jobs:
             
             echo "Volume mounted successfully at $MOUNT_POINT"
 
-  release:
-    needs: [lint-and-typecheck-and-test, infrastructure, prepare-server, build-and-push-image]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
       - name: Pull docker images and run application on server using docker compose
         uses: appleboy/ssh-action@v1.0.0
         env:
@@ -248,7 +238,7 @@ jobs:
           BLOG_EMAIL_PASSWORD: ${{ secrets.BLOG_EMAIL_PASSWORD }}
         with:
           username: ec2-user
-          host: ${{ needs.infrastructure.outputs.ec2_ip }}
+          host: ${{ env.EC2_IP }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           envs: > 
             DB_NAME,

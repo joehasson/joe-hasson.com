@@ -64,11 +64,14 @@ resource "aws_security_group" "app" {
   description = "Security group for portfolio app"
   vpc_id      = aws_vpc.main.id
 
+  # Only allow ssh from machine being used to run 
+  # infrastructure deployment (e.g. github actions runner)
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Consider restricting to your IP
+    cidr_blocks = ["${var.deploy_machine_ip}/32"]
+    description = "Allow SSH from GitHub Actions IPs"
   }
 
   # http port
@@ -114,7 +117,7 @@ resource "aws_instance" "app" {
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   
   vpc_security_group_ids = [aws_security_group.app.id]
-  
+
   key_name = aws_key_pair.deployer.key_name
 
   root_block_device {
