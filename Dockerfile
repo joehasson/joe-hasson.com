@@ -30,8 +30,12 @@ RUN /usr/src/app/target/release/static-build
 
 FROM nginx:alpine as reverse-proxy
 
-COPY nginx.conf /etc/nginx/nginx.conf
+ARG NGINX_CONF=nginx/ngin.prod.conf
+
+COPY ${NGINX_CONF} /etc/nginx/nginx.conf
+COPY nginx/locations.conf /etc/nginx/locations.conf
 RUN rm /etc/nginx/conf.d/default.conf
+
 COPY --from=builder  /usr/src/app/build /build
 RUN apk add --no-cache curl ca-certificates  # Needed for healthcheck
 
