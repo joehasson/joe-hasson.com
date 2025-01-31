@@ -51,6 +51,14 @@ resource "aws_route_table_association" "public" {
 }
 
 # Security Group
+data "http" "cloudflare_ips_v4" {
+  url = "https://api.cloudflare.com/client/v4/ips"
+}
+
+locals {
+  cloudflare_ip_ranges = jsondecode(data.http.cloudflare_ips_v4.response_body).result.ipv4_cidrs
+}
+
 resource "aws_security_group" "app" {
   name        = "${var.project_name}-sg"
   description = "Security group for portfolio app"
@@ -68,7 +76,7 @@ resource "aws_security_group" "app" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = local.cloudflare_ip_ranges
   }
 
   # https port
@@ -76,15 +84,7 @@ resource "aws_security_group" "app" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # dev port
-  ingress {
-    from_port   = 8000
-    to_port     = 8000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = local.cloudflare_ip_ranges
   }
 
   # allow all egress
