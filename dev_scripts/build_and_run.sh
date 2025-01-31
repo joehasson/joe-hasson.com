@@ -9,7 +9,7 @@ docker compose up db -d --wait
 sqlx migrate run
 cargo sqlx prepare
 
-docker build . --target reverse-proxy -t reverse-proxy
+docker build . --target reverse-proxy --build-arg NGINX_CONF=nginx/nginx.dev.conf -t reverse-proxy
 docker build . --target blog-post-dispatcher -t blog-post-dispatcher
 docker build . --target backend -t backend
 docker build . --target migrations -f Dockerfile.migrations -t migrations
