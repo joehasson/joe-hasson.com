@@ -3,3 +3,13 @@ services:
   db:
     volumes:
       - /mnt/postgres-data:/var/lib/postgresql/data
+  reverse-proxy:
+    ports:
+      - "443:443"
+    healthcheck:
+      # use SSL
+      test: ["CMD", "curl", "-k", "-f", "https://127.0.0.1:443/health_check"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 2s

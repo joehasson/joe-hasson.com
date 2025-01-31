@@ -10,6 +10,8 @@ services:
       timeout: 3s
       retries: 5
       start_period: 2s
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
     depends_on:
       backend:
         condition: service_healthy
